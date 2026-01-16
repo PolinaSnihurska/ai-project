@@ -24,4 +24,5 @@ function authenticateToken(req: AuthenticatedRequest, res: Response, next: NextF
     });
 }
 
+
 export default authenticateToken;
