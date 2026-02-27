@@ -15,6 +15,7 @@ import Banner from '@/components/Banner'
 import { AppProvider } from '@/Helpers/AccountDialog'
 import { store } from './store'
 import Session from '@/components/Session'
+import ChatAssistant from '@/components/ChatAssistant/MinimalistChat'
 const App = () => {
 
   return (
@@ -34,6 +35,7 @@ const App = () => {
               <Tabs/>
               <Footer/>
           </main>
+          <ChatAssistant/>
         </AppProvider>
       </MenuProvider>
     </Provider>

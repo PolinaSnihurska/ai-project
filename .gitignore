@@ -15,10 +15,13 @@ Server/.env
 /coverage
 
 # next.js
+.next
 /.next/
 /out/
 
 # production
+dist
+build
 /build
 
 # misc
@@ -35,7 +38,7 @@ yarn-error.log*
 .env*.local
 
 # dependencies
-node_modules/
+node_modules
 
 # vercel
 .vercel
