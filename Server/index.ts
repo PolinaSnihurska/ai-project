@@ -20,7 +20,7 @@ app.use(bodyParser.json({ limit: '100kb' }));
 app.use(express.urlencoded({ extended: false }));
 app.use(helmet());
 
-const origin_url = process.env.FRONTEND_SERVER_ORIGIN;
+const origin_url = process.env.FRONTEND_SERVER_ORIGIN || '*';
 app.use(
   cors({
     origin: origin_url,
@@ -39,12 +39,12 @@ const startServer = async () => {
   await connectDB();
 
   // === TEST CONNECTION ===
-  try {
-    const res = await client.query('SELECT COUNT(*) FROM electronics_products');
-    console.log('Products in DB:', res.rows[0].count);
-  } catch (err) {
-    console.error('Test query error:', err);
-  }
+  // try {
+  //   const res = await client.query('SELECT COUNT(*) FROM electronics_products');
+  //   console.log('Products in DB:', res.rows[0].count);
+  // } catch (err) {
+  //   console.error('Test query error:', err);
+  // }
   // ======================
 
 
