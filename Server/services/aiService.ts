@@ -83,6 +83,7 @@ export class AIService {
 
             const userPrompt = language === 'uk' ? `
 Проаналізуй повідомлення користувача та витягни намір та сутності у форматі JSON.
+ВАЖЛИВО: Оскільки база даних англійською, ПЕРЕКЛАДАЙ значення searchTerm, category, brand, productType, useCase та specifications на АНГЛІЙСЬКУ мову.
 
 Повідомлення:
 "${message}"
@@ -90,21 +91,21 @@ export class AIService {
 Поверни ТІЛЬКИ валідний JSON:
 {
   "intent": "search|compare|recommend|question|refine|budget|scenario",
-  "category": string | null,
-  "mainCategory": string | null,
-  "budget": number | null,
-  "minPrice": number | null,
-  "maxPrice": number | null,
-  "rating": number | null,
-  "searchTerm": string | null,
-  "productIds": number[] | null,
-  "brand": string | null,
-  "productType": 'phone' | 'charger' | 'case' | 'earbuds' | 'tv',
-  "useCase": string | null,
-  "specifications": object | null,
+  "category": "string | null",
+  "mainCategory": "string | null",
+  "budget": "number | null",
+  "minPrice": "number | null",
+  "maxPrice": "number | null",
+  "rating": "number | null",
+  "searchTerm": "ТІЛЬКИ конкретний бренд або модель АНГЛІЙСЬКОЮ (наприклад 'Samsung', 'iPhone'). Якщо нічого немає - null",
+  "productIds": "number[] | null",
+  "brand": "string | null",
+  "productType": "phone | charger | case | earbuds | tv | laptop | keyboard | chair | null",
+  "useCase": "Для чого потрібен товар АНГЛІЙСЬКОЮ | null",
+  "specifications": "Об'єкт з бажаними характеристиками АНГЛІЙСЬКОЮ | null",
   "language": "en|uk",
-  "needsClarification": boolean,
-  "clarificationQuestion": string | null
+  "needsClarification": "boolean (став true ТІЛЬКИ якщо запит взагалі позбавлений сенсу. Для слів типу 'телефон', 'ноутбук', 'навушники' став false)",
+  "clarificationQuestion": "Питання для уточнення виключно УКРАЇНСЬКОЮ МОВОЮ | null"
 }
 ` : `
 Analyze the following user message and extract intent and entities in JSON format.
@@ -115,24 +116,23 @@ Message:
 Return ONLY valid JSON:
 {
   "intent": "search|compare|recommend|question|refine|budget|scenario",
-  "category": string | null,
-  "mainCategory": string | null,
-  "budget": number | null,
-  "minPrice": number | null,
-  "maxPrice": number | null,
-  "rating": number | null,
-  "searchTerm": string | null,
-  "productIds": number[] | null,
-  "brand": string | null,
-  "productType": 'phone' | 'charger' | 'case' | 'earbuds' | 'tv',
-  "useCase": string | null,
-  "specifications": object | null,
+  "category": "string | null",
+  "mainCategory": "string | null",
+  "budget": "number | null",
+  "minPrice": "number | null",
+  "maxPrice": "number | null",
+  "rating": "number | null",
+  "searchTerm": "ONLY exact brand or model (e.g. 'Samsung', 'iPhone'). DO NOT put 'good battery' or 'for work' here. If no specific brand/model, return null",
+  "productIds": "number[] | null",
+  "brand": "string | null",
+  "productType": "phone | charger | case | earbuds | tv | null",
+  "useCase": "What the user needs it for (e.g. 'work and study') | null",
+  "specifications": "Object with desired specs (e.g. {'battery': 'good', 'camera': 'good'}) | null",
   "language": "en|uk",
-  "needsClarification": boolean,
-  "clarificationQuestion": string | null
+  "needsClarification": "boolean",
+  "clarificationQuestion": "string | null"
 }
 `;
-
             const response = await axios.post(
                 this.API_URL,
                 {
@@ -143,11 +143,14 @@ Return ONLY valid JSON:
                     ],
                     temperature: 0.3
                 },
-                { headers: this.getHeaders(), timeout: 7000 }
+                { headers: this.getHeaders(), timeout: 15000 }
             );
 
-            console.log('Raw AI response:', response.data);
-            const content = response.data.output_text;
+            
+            let content = response.data?.output?.[0]?.content?.[0]?.text || '{}';
+            
+            content = content.replace(/```json/gi, '').replace(/```/g, '').trim();
+            
             const entities = JSON.parse(content) as ExtractedEntities;
             
             if (entities.intent === 'search' && keywordIntent) {
@@ -156,7 +159,7 @@ Return ONLY valid JSON:
             
             entities.language = language;
             
-            const budgetMatch = message.match(/under\s+(\d+)|below\s+(\d+)|до\s+(\d+)|ціна\s+до\s+(\d+)/i);
+            const budgetMatch = message.match(/under\s+(\d+)|below\s+(\d+)|до\s+(\d+)|ціна\s+до\s+(\d+)|budget\s+(\d+)|бюджет\s+(\d+)/i);
             if (budgetMatch) {
                 const value = Number(budgetMatch[1] || budgetMatch[2] || budgetMatch[3] || budgetMatch[4]);
                 if (!isNaN(value)) {
@@ -184,20 +187,14 @@ static async generateResponse(
 
     console.log('ENTER generateResponse');
 
-    if (products.length === 0) {
-        console.log('NO PRODUCTS');
-        return {
-            text: 'No products',
-            products: [],
-            entities
-        };
+    let productContext = "No specific products found matching the criteria.";
+    if (products.length > 0) {
+        productContext = products.slice(0, 20).map(p => `
+        ID: ${p.id}
+        Name: ${p.name}
+        Price: ${p.price}
+        `).join('\n');
     }
-
-    const productContext = products.slice(0, 3).map(p => `
-ID: ${p.id}
-Name: ${p.name}
-Price: ${p.price}
-`).join('\n');
 
     console.log('PRODUCT CONTEXT:', productContext);
 
@@ -209,21 +206,20 @@ Price: ${p.price}
                 content: `
               You are a friendly and helpful AI assistant for an electronics e-commerce platform.
 
-              IMPORTANT:
-              - If user language is "uk", respond ONLY in Ukrainian.
-              - If user language is "en", respond ONLY in English.
-              - If intent is "reccomend", searchTerm MUST be null
-              - Recomendation verbs (e.g. "порекомендуй", "recommend") are NOT part of searchTerm
-
               User language: ${entities.language}
+
+              CRITICAL RULE: You MUST write your final response ONLY in this language: ${entities.language}. 
+              Even though the product names are in English, your explanations, reasons, and formatting MUST be in ${entities.language}. DO NOT output English text unless it's the official brand/product name.
               
               Your task:
-              - Help the user choose products.
-              - Speak naturally, like a consultant in a tech store.
-              - Extract intent: "search", "recommend", "compare"
-              - Extract entities: product type, brand, budget, etc.
-              If user wants to compare two products, set intent to "compare".
-              
+              - The user has complex requirements: Use case: ${entities.useCase || 'None'}, Specifications: ${JSON.stringify(entities.specifications || {})}.
+              - Look carefully at the "Name" field of the provided products. The Name contains important specifications like RAM, Battery capacity (mAh), camera megapixels, etc.
+              - ACT AS A FILTER: Out of the products provided below, choose ONLY 1-3 products that BEST match the user's requirements (e.g., if they want a 'good battery', pick the one with 5000mAh or 6000mAh).
+              - Explain WHY you are recommending them based on these specs.
+              - Speak naturally, like an expert consultant in a tech store.
+              - Start with an empathetic and confident opening.
+              - Do NOT invent products. Use ONLY the products provided.
+
               Response style rules:
               - Start with a short friendly sentence (for example: "Sure! Here are the best Samsung products I can recommend.").
               - If the user asks for recommendations, clearly say that you are recommending products.
@@ -265,7 +261,7 @@ Price: ${p.price}
     const response = await axios.post(
         this.API_URL,
         payload,
-        { headers: this.getHeaders(), timeout: 7000 }
+        { headers: this.getHeaders(), timeout: 20000 }
     );
 
     console.log('AI RAW RESPONSE:', JSON.stringify(response.data, null, 2));
@@ -384,7 +380,7 @@ Use user's language.
         
         return {
             intent: keywordIntent || 'search',
-            searchTerm: message,
+            searchTerm: null as unknown as string, 
             language: language,
             needsClarification: false
         };

@@ -10,6 +10,7 @@ const MinimalistChat = () => {
   const [message, setMessage] = useState("");
   const [isVoiceOpen, setIsVoiceOpen] = useState(false);
   const [showChatHistory, setShowChatHistory] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
   const [messages, setMessages] = useState([
     {
       id: 1,
@@ -26,31 +27,18 @@ const MinimalistChat = () => {
   ]);
   const [showWelcome, setShowWelcome] = useState(true);
 
-  // Sample chat history data
-  const chatHistory = [
-    {
-      id: 1,
-      title: "Пошук телефону",
-      preview: "Рекомендую розглянути Samsung A15/A25...",
-      date: "2024-01-27",
-      messageCount: 5,
-    },
-    {
-      id: 2,
-      title: "Вибір ноутбука",
-      preview: "Для роботи підійде MacBook Air або...",
-      date: "2024-01-26",
-      messageCount: 8,
-    },
-    {
-      id: 3,
-      title: "Геймерське крісло",
-      preview: "Рекомендую крісла з хорошою підтримкою...",
-      date: "2024-01-25",
-      messageCount: 3,
-    },
-  ];
+  const [currentSessionId, setCurrentSessionId] = useState(`session-${Date.now()}`);
+  
+  // Тепер історія чатів - це теж стан, який ми будемо оновлювати
+  const [chatHistory, setChatHistory] = useState<any[]>([]);
 
+  // Завантажуємо історію з пам'яті браузера при першому відкритті
+  React.useEffect(() => {
+    const saved = localStorage.getItem('chatHistory');
+    if (saved) {
+      setChatHistory(JSON.parse(saved));
+    }
+  }, []);
   // const sendMessage = (text: string) => {
   //   if (!text.trim()) return
 
@@ -65,6 +53,50 @@ const MinimalistChat = () => {
   //   setMessage('')
   //   setShowWelcome(false)
 
+  const startVoiceRecognition = () => {
+    // Кажемо TypeScript ігнорувати перевірку цих властивостей через (window as any)
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    
+    if (!SpeechRecognition) {
+      alert("На жаль, ваш браузер не підтримує голосове введення 😢 Спробуйте Google Chrome.");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'uk-UA'; // Встановлюємо українську мову
+    recognition.interimResults = false; // Чекаємо, поки користувач закінчить фразу
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => {
+      setIsRecording(true); // Вмикаємо анімацію "слухаю"
+    };
+
+    // Додаємо тип any для event
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      console.log("🎤 Розпізнано текст:", transcript);
+      
+      // Автоматично відправляємо повідомлення
+      sendMessage(transcript); 
+      setIsVoiceOpen(false); // Закриваємо вікно мікрофона
+    };
+
+    // І тут теж додаємо any
+    recognition.onerror = (event: any) => {
+      console.error("Помилка мікрофона:", event.error);
+      setIsRecording(false);
+      if (event.error === 'not-allowed') {
+        alert("Будь ласка, дозвольте доступ до мікрофона у спливаючому вікні браузера.");
+      }
+    };
+
+    recognition.onend = () => {
+      setIsRecording(false); // Вимикаємо анімацію
+    };
+
+    // Запускаємо прослуховування
+    recognition.start();
+  };
   const sendMessage = async (text: string) => {
     console.log("🚀 sendMessage called with:", text);
     if (!text.trim()) {
@@ -88,12 +120,10 @@ const MinimalistChat = () => {
         process.env.NEXT_PUBLIC_API_URL + "/api/chat/message",
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             message: text,
-            sessionId: "frontend-session-1",
+            sessionId: currentSessionId,
           }),
         }
       );
@@ -108,6 +138,30 @@ const MinimalistChat = () => {
       };
 
       setMessages((prev) => [...prev, botResponse]);
+
+      setChatHistory((prevHistory) => {
+        const existingChatIndex = prevHistory.findIndex(chat => chat.id === currentSessionId);
+        let newHistory = [...prevHistory];
+
+        if (existingChatIndex >= 0) {
+          // Якщо чат вже є в історії, просто оновлюємо прев'ю і кількість повідомлень
+          newHistory[existingChatIndex].preview = botResponse.text.substring(0, 40) + "...";
+          newHistory[existingChatIndex].messageCount += 2; // +1 від юзера, +1 від бота
+        } else {
+          // Якщо це перше повідомлення, створюємо новий запис в історії
+          newHistory.unshift({
+            id: currentSessionId,
+            title: text.substring(0, 25) + (text.length > 25 ? "..." : ""), // Назва чату = перше питання
+            preview: botResponse.text.substring(0, 40) + "...",
+            date: new Date().toISOString(),
+            messageCount: 2
+          });
+        }
+        
+        // Зберігаємо в пам'ять браузера
+        localStorage.setItem('chatHistory', JSON.stringify(newHistory));
+        return newHistory;
+      });
     } catch (err) {
       setMessages((prev) => [
         ...prev,
@@ -268,6 +322,19 @@ const MinimalistChat = () => {
                       </h2>
                     </div>
                     <div className="p-2 text-gray-500">
+                    <button
+                        className="text-gray-500 hover:text-gray-700 transition-colors p-2 mr-1"
+                        title="Почати новий чат"
+                        onClick={() => {
+                          setCurrentSessionId(`session-${Date.now()}`);
+                          setMessages([{ id: 1, type: "bot", text: "Привіт!👋 Чим Вам допомогти?", showButtons: true }]);
+                          setShowWelcome(true);
+                        }}
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                        </svg>
+                      </button>
                       <button
                         className="text-gray-500 hover:text-gray-700 transition-colors p-2"
                         onClick={() => setShowChatHistory(true)}
@@ -508,14 +575,19 @@ const MinimalistChat = () => {
               ) : (
                 <div className="text-center bg-white rounded-2xl py-10 px-6 shadow-sm">
                   <p className="text-gray-600 mb-8 text-lg font-medium max-w-[220px] mx-auto leading-tight">
-                    Ви можете запитати мене все про пристрої
+                    {/* Текст змінюється, коли бот слухає */}
+                    {isRecording ? "Слухаю вас..." : "Натисніть на мікрофон та говоріть"}
                   </p>
                   <button
-                    className="w-20 h-20 mx-auto bg-white rounded-full flex items-center justify-center shadow-lg border-4 border-gray-400 hover:border-gray-600 transition-colors"
-                    onClick={() => setIsVoiceOpen(false)}
+                    // Додаємо пульсацію (animate-pulse) та червону рамку під час запису
+                    className={`w-20 h-20 mx-auto bg-white rounded-full flex items-center justify-center shadow-lg border-4 transition-all duration-300 ${
+                      isRecording ? "border-red-500 animate-pulse bg-red-50" : "border-gray-400 hover:border-gray-600"
+                    }`}
+                    // Викликаємо нашу нову функцію замість простого закриття вікна
+                    onClick={startVoiceRecognition}
                   >
                     <svg
-                      className="w-10 h-10 text-black"
+                      className={`w-10 h-10 ${isRecording ? "text-red-500" : "text-black"}`}
                       fill="currentColor"
                       viewBox="0 0 24 24"
                     >
@@ -523,6 +595,16 @@ const MinimalistChat = () => {
                       <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
                     </svg>
                   </button>
+                  
+                  {/* Додаємо кнопку скасування, щоб можна було вийти без запису */}
+                  {!isRecording && (
+                     <button 
+                       className="mt-6 text-sm text-gray-400 hover:text-gray-600 underline"
+                       onClick={() => setIsVoiceOpen(false)}
+                     >
+                       Скасувати
+                     </button>
+                  )}
                 </div>
               )}
             </div>

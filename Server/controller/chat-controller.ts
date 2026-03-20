@@ -40,56 +40,55 @@ export class ChatController {
                 categories
             );
 
-            const messageLower = message.toLowerCase();
-            const idsInMessage = message.match(/\d+/g)?.map(Number) || [];
+            // const messageLower = message.toLowerCase();
+            // const idsInMessage = message.match(/\d+/g)?.map(Number) || [];
 
-            if (
-                idsInMessage.length >= 2 &&
-                (
-                    messageLower.includes('compare') ||
-                    messageLower.includes('vs') ||
-                    messageLower.includes('versus') ||
-                    messageLower.includes('and')
-                )
-            ) {
-                entities.intent = 'compare';
-                entities.productIds = idsInMessage;
-            }
+            // if (
+            //     idsInMessage.length >= 2 &&
+            //     (
+            //         messageLower.includes('compare') ||
+            //         messageLower.includes('vs') ||
+            //         messageLower.includes('versus') ||
+            //         messageLower.includes('and')
+            //     )
+            // ) {
+            //     entities.intent = 'compare';
+            //     entities.productIds = idsInMessage;
+            // }
 
-            if (entities.intent === 'compare') {
-                const ids = message.match(/\d+/g)?.map(Number) || [];
-                entities.productIds = ids;
-                delete entities.searchTerm;
-            }
+            // if (entities.intent === 'compare') {
+            //     const ids = message.match(/\d+/g)?.map(Number) || [];
+            //     entities.productIds = ids;
+            //     delete entities.searchTerm;
+            // }
 
-            if (entities.searchTerm) {
-                const language = entities.language || 'en';
-                const stopWords = language === 'uk' ? [
-                    'порекомендуй', 'порадь', 'знайди', 'шукаю', 'покажи', 'дай',
-                    'будь ласка', 'кращі', 'дешеві', 'телефон', 'телефони',
-                    'два', 'порівняй', 'з', 'продукти', 'до', 'і', 'та'
-                ] : [
-                    'recommend', 'search', 'find', 'show', 'give', 'me',
-                    'please', 'best', 'cheap', 'phone', 'phones', 
-                    'two', 'compare', 'with', 'products', 'under', 'and'
-                ];
+            // if (entities.searchTerm) {
+            //     const language = entities.language || 'en';
+            //     const stopWords = language === 'uk' ? [
+            //         'порекомендуй', 'порадь', 'знайди', 'шукаю', 'покажи', 'дай',
+            //         'будь ласка', 'кращі', 'дешеві', 'телефон', 'телефони',
+            //         'два', 'порівняй', 'з', 'продукти', 'до', 'і', 'та'
+            //     ] : [
+            //         'recommend', 'search', 'find', 'show', 'give', 'me',
+            //         'please', 'best', 'cheap', 'phone', 'phones', 
+            //         'two', 'compare', 'with', 'products', 'under', 'and'
+            //     ];
             
-                let normalized = entities.searchTerm.toLowerCase();
+            //     let normalized = entities.searchTerm.toLowerCase();
             
-                stopWords.forEach(word => {
-                    normalized = normalized.replace(new RegExp(`\\b${word}\\b`, 'gi'), '');
-                });
+            //     stopWords.forEach(word => {
+            //         normalized = normalized.replace(new RegExp(`\\b${word}\\b`, 'gi'), '');
+            //     });
             
-                normalized = normalized.trim();
+            //     normalized = normalized.trim();
             
-                if (normalized.length > 0) {
-                    entities.searchTerm = normalized;
-                }
-            }
+            //     if (normalized.length > 0) {
+            //         entities.searchTerm = normalized;
+            //     }
+            // }
 
             console.log('ENTITIES:', JSON.stringify(entities, null, 2));
 
-            // ---- ПОТРЕБА УТОЧНЕННЯ ----
             if (entities.needsClarification && entities.clarificationQuestion) {
                 ContextService.addMessage(finalSessionId, {
                     role: 'assistant',
@@ -120,19 +119,20 @@ export class ChatController {
 
             const filters: ProductFilters = {
                 searchTerm: entities.searchTerm,
+                brand: entities.brand,
+                specifications: entities.specifications,
                 category: entities.category,
                 productType: entities.productType,
                 mainCategory: entities.mainCategory,
                 minPrice: entities.minPrice,
                 maxPrice: entities.maxPrice || entities.budget,
                 minRating: entities.rating,
-                limit: 10
+                limit: 30
             };
 
             let products: Product[] = [];
             let matchedProducts: Product[] = [];
 
-            // ---- ПОРІВНЯННЯ ----
             if (
                 entities.intent === 'compare' && 
                 Array.isArray(entities.productIds) &&
@@ -142,7 +142,6 @@ export class ChatController {
                     productIds: entities.productIds
                 });
             
-                // Недостатньо продуктів для порівняння
                 if (matchedProducts.length < 2) {
                     const errorMessage = entities.language === 'uk'
                         ? 'На жаль, недостатньо продуктів для порівняння.'
@@ -178,7 +177,6 @@ export class ChatController {
                         ? phoneProducts.slice(0, 2)
                         : matchedProducts.slice(0, 2);
             
-                // Недостатньо телефонів для порівняння
                 if (productsToCompare.length < 2) {
                     const errorMessage = entities.language === 'uk'
                         ? 'На жаль, недостатньо телефонів для порівняння.'
@@ -212,7 +210,6 @@ export class ChatController {
             console.log('PRODUCTS SENT TO AI:', products.length);
             console.log('FIRST PRODUCT:', products[0]);
 
-            // ---- ОСНОВНА ВІДПОВІДЬ AI ----
             const aiResponse: AIResponse = await AIService.generateResponse(
                 message,
                 context,

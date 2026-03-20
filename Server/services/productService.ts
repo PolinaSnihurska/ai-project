@@ -11,6 +11,7 @@ export interface ProductFilters {
     productType?: 'phone' | 'charger' | 'case' | 'earbuds' | 'tv';
     limit?: number;
     productIds?: number[];
+    specifications?: Record<string, any>;
 }
 
 export interface Product {
@@ -146,18 +147,29 @@ export class ProductService {
                 query += ` AND ep.name ILIKE $${paramIndex}`;
                 values.push(`%${filters.searchTerm}%`);
                 paramIndex++;
+            } else if (filters.brand) {
+                query += ` AND ep.name ILIKE $${paramIndex}`;
+                values.push(`%${filters.brand}%`);
+                paramIndex++;
             }
 
             if (filters.productType === 'phone') {
                 query += `
-                    AND ep.name ILIKE '%phone%'
+                    AND (ep.name ILIKE '%smartphone%' OR ep.name ILIKE '%phone%' OR ep.name ILIKE '%mobile%')
+                    AND ep.price > 4000
                     AND ep.name NOT ILIKE '%case%'
                     AND ep.name NOT ILIKE '%cover%'
                     AND ep.name NOT ILIKE '%charger%'
+                    AND ep.name NOT ILIKE '%cable%'
+                    AND ep.name NOT ILIKE '%stand%'
+                    AND ep.name NOT ILIKE '%mount%'
+                    AND ep.name NOT ILIKE '%holder%'
+                    AND ep.name NOT ILIKE '%earphone%'
+                    AND ep.name NOT ILIKE '%earbud%'
+                    AND ep.name NOT ILIKE '%protector%'
+                    AND ep.name NOT ILIKE '%adapter%'
                 `;
             }
-            
- 
             if (filters.category) {
                 query += ` AND c.sub_category ILIKE $${paramIndex}`;
                 values.push(`%${filters.category}%`);
@@ -165,33 +177,38 @@ export class ProductService {
             }
 
             if (filters.mainCategory) {
-                query += `AND c.main_category ILIKE $${paramIndex}`;
+                query += ` AND c.main_category ILIKE $${paramIndex}`;
                 values.push(`%${filters.mainCategory}%`);
                 paramIndex++;
             }
 
-            if (filters.minPrice !== undefined) {
-                query +=  `AND COALESCE(ep.price, ep.original_price) >= $${paramIndex}`;
+            if (filters.minPrice !== undefined && filters.minPrice !== null) {
+                query += ` AND COALESCE(ep.price, ep.original_price) >= $${paramIndex}`;
                 values.push(filters.minPrice);
                 paramIndex++;
             }
             
-            if (filters.maxPrice !== undefined) {
-                query +=  `AND COALESCE(ep.price, ep.original_price) <= $${paramIndex}`;
+            if (filters.maxPrice !== undefined && filters.maxPrice !== null) {
+                query += ` AND COALESCE(ep.price, ep.original_price) <= $${paramIndex}`;
                 values.push(filters.maxPrice);
                 paramIndex++;
             }
 
-            if (filters.minRating !== undefined) {
+            if (filters.minRating !== undefined && filters.minRating !== null) {
                 query += ` AND ep.rating >= $${paramIndex}`;
                 values.push(filters.minRating);
                 paramIndex++;
             }
 
+            if (filters.productType === 'charger') {
+                query += ` AND (ep.name ILIKE '%cable%' OR ep.name ILIKE '%charger%' OR ep.name ILIKE '%adapter%')`;
+            }
+
             console.log('FILTERS:', filters);
 
-            query += ` ORDER BY ep.rating DESC`;
-            const limit = filters.limit || 10;
+            // query += ` ORDER BY ep.rating DESC`;
+            query += ` ORDER BY RANDOM()`;
+            const limit = filters.limit || 20;
             query += ` LIMIT $${paramIndex}`;
             values.push(limit);
 
