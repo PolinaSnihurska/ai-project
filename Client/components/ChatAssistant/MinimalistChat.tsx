@@ -7,6 +7,7 @@ const MinimalistChat = () => {
   console.log("MinimalistChat rendered");
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [message, setMessage] = useState("");
   const [isVoiceOpen, setIsVoiceOpen] = useState(false);
   const [showChatHistory, setShowChatHistory] = useState(false);
@@ -98,11 +99,15 @@ const MinimalistChat = () => {
     recognition.start();
   };
   const sendMessage = async (text: string) => {
-    console.log("🚀 sendMessage called with:", text);
-    if (!text.trim()) {
-      console.log("⛔ empty message");
+    console.log("sendMessage called with:", text);
+    // Додаємо перевірку на isGenerating, щоб не відправляти двічі
+    if (!text.trim() || isGenerating) {
+      console.log("Еmpty message or already generating");
       return;
     }
+
+    // ВМИКАЄМО анімацію завантаження
+    setIsGenerating(true);
 
     const userMessage = {
       id: Date.now(),
@@ -144,21 +149,18 @@ const MinimalistChat = () => {
         let newHistory = [...prevHistory];
 
         if (existingChatIndex >= 0) {
-          // Якщо чат вже є в історії, просто оновлюємо прев'ю і кількість повідомлень
           newHistory[existingChatIndex].preview = botResponse.text.substring(0, 40) + "...";
-          newHistory[existingChatIndex].messageCount += 2; // +1 від юзера, +1 від бота
+          newHistory[existingChatIndex].messageCount += 2;
         } else {
-          // Якщо це перше повідомлення, створюємо новий запис в історії
           newHistory.unshift({
             id: currentSessionId,
-            title: text.substring(0, 25) + (text.length > 25 ? "..." : ""), // Назва чату = перше питання
+            title: text.substring(0, 25) + (text.length > 25 ? "..." : ""),
             preview: botResponse.text.substring(0, 40) + "...",
             date: new Date().toISOString(),
             messageCount: 2
           });
         }
         
-        // Зберігаємо в пам'ять браузера
         localStorage.setItem('chatHistory', JSON.stringify(newHistory));
         return newHistory;
       });
@@ -168,13 +170,14 @@ const MinimalistChat = () => {
         {
           id: Date.now() + 2,
           type: "bot",
-          text: "❌ Не вдалося підключитись до сервера",
+          text: "Не вдалося підключитись до сервера",
           showButtons: false,
         },
       ]);
+    } finally {
+      setIsGenerating(false);
     }
   };
-
   // setTimeout(() => {
   //   const botResponse = {
   //     id: Date.now() + 1,
@@ -529,6 +532,7 @@ const MinimalistChat = () => {
                       onKeyDown={(e) =>
                         e.key === "Enter" &&
                         message.trim() &&
+                        !isGenerating &&
                         sendMessage(message)
                       }
                       placeholder="Введіть ваше повідомлення..."
@@ -553,37 +557,60 @@ const MinimalistChat = () => {
                       </svg>
                     </button>
                   </div>
+
+                  {/* ОСЬ ТУТ ПОЧИНАЄТЬСЯ ОНОВЛЕНА КНОПКА ЗІ СТРІЛОЧКОЮ ТА ЗАВАНТАЖЕННЯМ */}
                   <button
-                    className="bg-gray-800 hover:bg-gray-900 text-white p-3 rounded-2xl transition-all duration-200 shadow-lg"
-                    onClick={() => message.trim() && sendMessage(message)}
+                    className={`p-3 flex items-center justify-center rounded-2xl transition-all duration-200 shadow-sm ${
+                      message.trim() && !isGenerating
+                        ? "bg-gray-800 hover:bg-gray-900 text-white cursor-pointer"
+                        : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    }`}
+                    style={{ width: "50px", height: "50px" }}
+                    onClick={() => {
+                      if (message.trim() && !isGenerating) {
+                        sendMessage(message);
+                      }
+                    }}
+                    disabled={isGenerating || !message.trim()}
                   >
-                    <svg
-                      className="w-6 h-6"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-                      />
-                    </svg>
+                    {isGenerating ? (
+                      <svg 
+                        className="animate-spin w-6 h-6" 
+                        xmlns="http://www.w3.org/2000/svg" 
+                        fill="none" 
+                        viewBox="0 0 24 24"
+                      >
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    ) : (
+                      <svg
+                        className="w-6 h-6 transform translate-x-[-1px] translate-y-[1px]"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+                        />
+                      </svg>
+                    )}
                   </button>
+                  {/* ОСЬ ТУТ ЗАКІНЧУЄТЬСЯ ОНОВЛЕНА КНОПКА */}
+
                 </div>
               ) : (
                 <div className="text-center bg-white rounded-2xl py-10 px-6 shadow-sm">
                   <p className="text-gray-600 mb-8 text-lg font-medium max-w-[220px] mx-auto leading-tight">
-                    {/* Текст змінюється, коли бот слухає */}
                     {isRecording ? "Слухаю вас..." : "Натисніть на мікрофон та говоріть"}
                   </p>
                   <button
-                    // Додаємо пульсацію (animate-pulse) та червону рамку під час запису
                     className={`w-20 h-20 mx-auto bg-white rounded-full flex items-center justify-center shadow-lg border-4 transition-all duration-300 ${
                       isRecording ? "border-red-500 animate-pulse bg-red-50" : "border-gray-400 hover:border-gray-600"
                     }`}
-                    // Викликаємо нашу нову функцію замість простого закриття вікна
                     onClick={startVoiceRecognition}
                   >
                     <svg
