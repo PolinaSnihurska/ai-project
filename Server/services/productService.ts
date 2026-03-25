@@ -177,7 +177,7 @@ export class ProductService {
                 paramIndex++;
             }
 
-            if (filters.mainCategory) {
+            if (filters.mainCategory && filters.mainCategory.toLowerCase() !== 'phone') {
                 query += ` AND c.main_category ILIKE $${paramIndex}`;
                 values.push(`%${filters.mainCategory}%`);
                 paramIndex++;
