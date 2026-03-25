@@ -121,6 +121,7 @@ export class ProductService {
     }
 
     static async searchProducts(filters: ProductFilters): Promise<Product[]> {
+        console.log("ШІ ПЕРЕДАВ ПАРАМЕТРИ ДЛЯ ПОШУКУ:", JSON.stringify(filters, null, 2));
         try {
             let query = `
                 SELECT ep.id, ep.name, ep.price, ep.original_price, ep.rating, ep.rating_count,
