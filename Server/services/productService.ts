@@ -133,6 +133,25 @@ export class ProductService {
             const values: any[] = [];
             let paramIndex = 1;
 
+            const searchLower = (filters.searchTerm || '').toLowerCase();
+        const categoryLower = (filters.category || '').toLowerCase();
+
+        if (searchLower.includes('аксесуар') || searchLower.includes('accessor') || categoryLower.includes('accessor')) {
+            query += ` AND (
+                ep.name ILIKE '%drive%' OR 
+                ep.name ILIKE '%mouse%' OR 
+                ep.name ILIKE '%keyboard%' OR 
+                ep.name ILIKE '%cable%' OR 
+                ep.name ILIKE '%adapter%' OR 
+                ep.name ILIKE '%case%' OR 
+                ep.name ILIKE '%charger%' OR
+                ep.name ILIKE '%stand%'
+            ) `;
+            
+            filters.searchTerm = undefined;
+            filters.category = undefined;
+        }
+
             if (filters.productIds && filters.productIds.length > 0) {
                 query += ` AND ep.id = ANY($${paramIndex})`;
                 values.push(filters.productIds);
@@ -171,6 +190,23 @@ export class ProductService {
                     AND ep.name NOT ILIKE '%adapter%'
                 `;
             }
+
+            if (filters.productType === 'earbuds') {
+                query += ` 
+                    AND (ep.name ILIKE '%earbud%' OR ep.name ILIKE '%headphone%' OR ep.name ILIKE '%airpods%' OR ep.name ILIKE '%headset%' OR ep.name ILIKE '%buds%')
+                    AND ep.name NOT ILIKE '%case%' 
+                    AND ep.name NOT ILIKE '%cover%'
+                `;
+            }
+
+            if (filters.productType === 'case') {
+                query += ` AND (ep.name ILIKE '%case%' OR ep.name ILIKE '%cover%' OR ep.name ILIKE '%silicone%') `;
+            }
+
+            if (filters.productType === 'charger') {
+                query += ` AND (ep.name ILIKE '%charger%' OR ep.name ILIKE '%adapter%' OR ep.name ILIKE '%cable%' OR ep.name ILIKE '%power bank%') `;
+            }
+
             if (filters.category) {
                 query += ` AND c.sub_category ILIKE $${paramIndex}`;
                 values.push(`%${filters.category}%`);
