@@ -197,7 +197,6 @@ static async generateResponse(
     }
 
     console.log('PRODUCT CONTEXT:', productContext);
-
     const payload = {
         model: this.MODEL,
         input: [
@@ -210,6 +209,7 @@ static async generateResponse(
 
               CRITICAL RULE: You MUST write your final response ONLY in this language: ${entities.language}. 
               Even though the product names are in English, your explanations, reasons, and formatting MUST be in ${entities.language}. DO NOT output English text unless it's the official brand/product name.
+              MEMORY RULE: If the user asks a follow-up question about a product mentioned earlier in the conversation, USE THE CHAT HISTORY to answer! Do NOT say you don't have information just because the current 'products' array is empty. You are allowed to remember and discuss previously mentioned items.
               
               Your task:
               - The user has complex requirements: Use case: ${entities.useCase || 'None'}, Specifications: ${JSON.stringify(entities.specifications || {})}.
@@ -243,11 +243,15 @@ static async generateResponse(
               USER SEARCH TERM: ${entities.searchTerm || 'not specified'}
               `
               },
+
               
             { 
                 role: 'system', 
-                content: `PRODUCTS:\n${productContext}` 
+                content: products.length > 0 
+                    ? `PRODUCTS:\n${productContext}` 
+                    : `NO NEW PRODUCTS. CRITICAL RULE: The user is asking a follow-up question. You MUST answer using the product information you already provided in the CHAT HISTORY. Do NOT say you don't have information.`
             },
+
 
             { 
                 role: 'user', 

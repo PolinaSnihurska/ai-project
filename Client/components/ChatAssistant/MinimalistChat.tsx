@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 
 const ReactMarkdown = require("react-markdown").default;
@@ -28,12 +28,18 @@ const MinimalistChat = () => {
   ]);
   const [showWelcome, setShowWelcome] = useState(true);
 
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
   const [currentSessionId, setCurrentSessionId] = useState(`session-${Date.now()}`);
   
-  // Тепер історія чатів - це теж стан, який ми будемо оновлювати
   const [chatHistory, setChatHistory] = useState<any[]>([]);
 
-  // Завантажуємо історію з пам'яті браузера при першому відкритті
   React.useEffect(() => {
     const saved = localStorage.getItem('chatHistory');
     if (saved) {
@@ -488,11 +494,8 @@ const MinimalistChat = () => {
                                 <div className="flex flex-wrap gap-2">
                                   {[
                                     "Телефон",
-                                    "Ноутбук",
                                     "Навушники",
-                                    "Стіл",
-                                    "Геймерське крісло",
-                                    "Клавіатура",
+                                    "Аксесуари",
                                   ].map((item) => (
                                     <button
                                       key={item}
@@ -515,6 +518,7 @@ const MinimalistChat = () => {
                         )}
                       </div>
                     ))}
+                    <div ref={messagesEndRef} />
                   </div>
                 </>
               )}
