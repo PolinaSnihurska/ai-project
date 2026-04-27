@@ -12,6 +12,7 @@ export interface ExtractedEntities {
     maxPrice?: number;
     rating?: number;
     searchTerm?: string;
+    searchTerms?: string[];
     productIds?: number[];
     brand?: string;
     productType?: 'phone' | 'charger' | 'case' | 'earbuds' | 'tv';
@@ -20,6 +21,7 @@ export interface ExtractedEntities {
     language?: 'en' | 'uk';
     needsClarification?: boolean;
     clarificationQuestion?: string;
+    
 }
 
 export interface AIResponse {
@@ -98,6 +100,7 @@ export class AIService {
   "maxPrice": "number | null",
   "rating": "number | null",
   "searchTerm": "ТІЛЬКИ конкретний бренд або модель АНГЛІЙСЬКОЮ (наприклад 'Samsung', 'iPhone'). Якщо нічого немає - null",
+  "searchTerms": "string[] - Масив назв конкретних товарів або моделей АНГЛІЙСЬКОЮ (наприклад ['Samsung Galaxy M33', 'Samsung Galaxy M13']). Якщо товар один - масив з одним елементом. Якщо немає - []",
   "productIds": "number[] | null",
   "brand": "string | null",
   "productType": "phone | charger | case | earbuds | tv | laptop | keyboard | chair | null",
@@ -123,6 +126,7 @@ Return ONLY valid JSON:
   "maxPrice": "number | null",
   "rating": "number | null",
   "searchTerm": "ONLY exact brand or model (e.g. 'Samsung', 'iPhone'). DO NOT put 'good battery' or 'for work' here. If no specific brand/model, return null",
+  "searchTerms": "string[] - Array of specific exact brands or models (e.g. ['Samsung Galaxy M33', 'Samsung Galaxy M13']). Return empty array [] if none.",
   "productIds": "number[] | null",
   "brand": "string | null",
   "productType": "phone | charger | case | earbuds | tv | null",
@@ -193,8 +197,15 @@ static async generateResponse(
         ID: ${p.id}
         Name: ${p.name}
         Price: ${p.price}
-        `).join('\n');
+        Description: ${p.description || 'N/A'}
+        Specifications: ${JSON.stringify(p.specifications || p.attributes || {})}
+        `).join('\n\n');
     }
+
+    const chatHistory = (context.messages || []).map(msg => ({
+        role: msg.role === 'user' ? 'user' : 'assistant',
+        content: msg.content
+    }));
 
     console.log('PRODUCT CONTEXT:', productContext);
     const payload = {
@@ -256,7 +267,9 @@ static async generateResponse(
             { 
                 role: 'user', 
                 content: message 
-            }
+            },
+
+            ...chatHistory
         ]
     };
 

@@ -31,6 +31,8 @@ export interface Product {
     rating_count: number;
     images: any;
     seller?: string;
+    specifications?: any; 
+    attributes?: any;
 }
 
 export class ProductService {
@@ -134,23 +136,31 @@ export class ProductService {
             let paramIndex = 1;
 
             const searchLower = (filters.searchTerm || '').toLowerCase();
-        const categoryLower = (filters.category || '').toLowerCase();
+            const categoryLower = (filters.category || '').toLowerCase();
+            const mainCategoryLower = (filters.mainCategory || '').toLowerCase();
 
-        if (searchLower.includes('аксесуар') || searchLower.includes('accessor') || categoryLower.includes('accessor')) {
-            query += ` AND (
-                ep.name ILIKE '%drive%' OR 
-                ep.name ILIKE '%mouse%' OR 
-                ep.name ILIKE '%keyboard%' OR 
-                ep.name ILIKE '%cable%' OR 
-                ep.name ILIKE '%adapter%' OR 
-                ep.name ILIKE '%case%' OR 
-                ep.name ILIKE '%charger%' OR
-                ep.name ILIKE '%stand%'
-            ) `;
-            
-            filters.searchTerm = undefined;
-            filters.category = undefined;
-        }
+            if (
+                searchLower.includes('аксесуар') || searchLower.includes('accessor') || 
+                categoryLower.includes('аксесуар') || categoryLower.includes('accessor') ||
+                mainCategoryLower.includes('аксесуар') || mainCategoryLower.includes('accessor')
+            ) {
+                query += ` AND (
+                    ep.name ILIKE '%drive%' OR 
+                    ep.name ILIKE '%mouse%' OR 
+                    ep.name ILIKE '%keyboard%' OR 
+                    ep.name ILIKE '%cable%' OR 
+                    ep.name ILIKE '%adapter%' OR 
+                    ep.name ILIKE '%case%' OR 
+                    ep.name ILIKE '%charger%' OR
+                    ep.name ILIKE '%stand%'
+                ) `;
+                
+                filters.searchTerm = undefined;
+                filters.category = undefined;
+                filters.mainCategory = undefined;
+                filters.productType = undefined;
+                filters.brand = undefined;
+            }
 
             if (filters.productIds && filters.productIds.length > 0) {
                 query += ` AND ep.id = ANY($${paramIndex})`;

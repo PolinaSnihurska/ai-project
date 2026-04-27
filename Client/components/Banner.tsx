@@ -1,90 +1,88 @@
-import React, { useLayoutEffect, useRef, useState } from 'react';
-import { bannerDataHandler } from '@/app/api/homeData';
-import Loading from './Loading';
-interface Banner {
-  bannerid: number;
-  toptitle: string;
-  middletitle: string;
-  bottomtitle: string;
-  imglink: string;
-  startprice: number;
-  buttontitle: string;
-  redirect_link: string;
-  createdat: Date;
-  updatedat: Date;
-}
+"use client";
+import React, { useState, useEffect } from 'react';
+
 const Banner = () => {
+  const banners = [
+    '/banner1.jpg',
+    '/banner2.jpg',
+    '/banner3.jpg'
+  ];
+
   const [currentIndex, setCurrentIndex] = useState(0);
-  const data = useRef<Banner[]>([]);
-  const [loading, setloading] = useState(true);
 
   const nextSlide = () => {
-    setCurrentIndex((prevIndex) => (prevIndex + 1) % data.current.length);
+    setCurrentIndex((prevIndex) => (prevIndex + 1) % banners.length);
   };
 
   const prevSlide = () => {
-    setCurrentIndex((prevIndex) => (prevIndex - 1 + data.current.length) % data.current.length);
+    setCurrentIndex((prevIndex) => (prevIndex - 1 + banners.length) % banners.length);
   };
-  async function sync(){
-    const res = await bannerDataHandler();
-    switch (res.status) {
-      case 200:
-        data.current = res.banners.data;
-        setloading(false);
-        break;
-      default:
 
-        break;
-    }
-  }
-  useLayoutEffect(() => {
-    sync();
-  }, [])
+  useEffect(() => {
+    const timer = setInterval(() => {
+      nextSlide();
+    }, 4000);
+    return () => clearInterval(timer);
+  }, []);
+
   return (
-    <div className='relative flex flex-col items-center mt-4'>
-      <div className='relative max-w-[1300px] overflow-hidden'>
+    // ❗️ Магія тут: max-w-[1300px] (ширина твого сайту) + mx-auto (центрування)
+    <div className='w-full max-w-[1300px] mx-auto mt-6 px-4 xl:px-0'>
+      
+      <div className='relative w-full overflow-hidden rounded-2xl shadow-lg group'>
+        
+        {/* Висоту трохи зменшили, щоб вона виглядала акуратніше */}
         <div
-          className='flex transition-transform duration-500 relative'
+          className='flex transition-transform duration-700 ease-out h-[150px] sm:h-[250px] md:h-[300px] lg:h-[350px]'
           style={{ transform: `translateX(-${currentIndex * 100}%)` }}
         >
-          {loading && <div className='w-screen h-[300px]'>{loading && <div className='absolute left-0 right-0 z-50'><Loading/></div>}</div> }
-          {data.current.map((each, index) => (
-            <div key={index} className='flex-shrink-0 w-full'>
-              <div className='relative'>
-                <img
-                  className='max-h-[450px] z-10 rounded-xl object-cover w-full'
-                  src={each.imglink}
-                  alt={`Slide ${index + 1}`}
-                />
-                <div className='absolute z-[15] md:hidden left-14 bottom-0 top-0 mt-auto mb-auto bg-white w-[320px] h-[220px] sm:w-[520px] sm:h-[220px] opacity-50 rounded-xl'></div>
-                <div className='absolute z-20 w-[300px] h-[200px] md:h-auto sm:w-[500px] flex flex-col gap-0 md:gap-4 md:left-32 left-16 bottom-0 top-0 mt-auto mb-auto justify-center'>
-                  <p className='text-salmon lg:text-3xl text-2xl font-medium'>{each.toptitle}</p>
-                  <p className='sm:text-5xl text-2xl font-bold'>{each.middletitle}</p>
-                  <p className='sm:text-2xl text-xl font-medium text-silver'>
-                    {each.bottomtitle}{' '}
-                    <span className='lg:text-4xl font-bold'>{each.startprice}</span>
-                  </p>
-                  <button className='sm:p-2 p-1 bg-salmon text-white px-5 sm:w-[130px] w-[120px] text-sm sm:text-base rounded-md font-semibold'>
-                    {each.buttontitle}
-                  </button>
-                </div>
-              </div>
-            </div>
+          {banners.map((src, index) => (
+            <img
+              key={index}
+              className='w-full h-full object-cover flex-shrink-0'
+              src={src}
+              alt={`Cyber Monday Promo ${index + 1}`}
+            />
           ))}
         </div>
+
+        {/* Ліва стрілка */}
+        <button
+          className='absolute left-4 top-1/2 transform -translate-y-1/2 w-10 h-10 flex items-center justify-center bg-white/30 backdrop-blur-sm hover:bg-white/70 text-black rounded-full transition-all opacity-0 group-hover:opacity-100 focus:outline-none z-20'
+          onClick={prevSlide}
+        >
+          <svg className="w-6 h-6 pr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+
+        {/* Права стрілка */}
+        <button
+          className='absolute right-4 top-1/2 transform -translate-y-1/2 w-10 h-10 flex items-center justify-center bg-white/30 backdrop-blur-sm hover:bg-white/70 text-black rounded-full transition-all opacity-0 group-hover:opacity-100 focus:outline-none z-20'
+          onClick={nextSlide}
+        >
+          <svg className="w-6 h-6 pl-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+
+        {/* Навігаційні крапочки */}
+        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-3 z-20">
+          {banners.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrentIndex(index)}
+              className={`h-2.5 rounded-full transition-all duration-300 ${
+                currentIndex === index 
+                  ? 'bg-white w-8 shadow-md'
+                  : 'bg-white/50 w-2.5 hover:bg-white/80'
+              }`}
+              aria-label={`Slide ${index + 1}`}
+            />
+          ))}
+        </div>
+
       </div>
-      <button
-        className='absolute left-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white px-2 py-1 rounded focus:outline-none'
-        onClick={prevSlide}
-      >
-        &#10094;
-      </button>
-      <button
-        className='absolute right-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white px-2 py-1 rounded focus:outline-none'
-        onClick={nextSlide}
-      >
-        &#10095;
-      </button>
     </div>
   );
 };

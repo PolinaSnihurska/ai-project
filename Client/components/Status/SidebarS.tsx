@@ -46,15 +46,29 @@ const SidebarS = () => {
                     {leftStatus.map((stat, index) =>
                         <div key={index}>
                             <div
-                                className={`flex text-base mb-4 cursor-pointer ${collapsedIndex === index ? 'border-b-[1px]' : ''}`}
+                                className={`flex items-center justify-between py-2 mb-2 cursor-pointer transition-colors group ${collapsedIndex === index ? 'border-b border-gray-100' : ''}`}
                                 onClick={() => {handleToggle(index)}}>
-                                <div className='flex justify-between items-center w-[100%] text-[20px]'>
-                                    <div className='flex justify-center items-center'>
-                                        <img className='h-[20px] w-[20px] mr-2' src={stat.imgLink} alt={stat.title} />
-                                        <p className='text-[16px] font-medium text-silver tracking-[1px]'>{stat.title}</p>
-                                    </div>
-                                    <p className='text-silver'>{collapsedIndex === index ? '-' : '+'}</p>
+                                
+                                {/* ❗️ Оновлений контейнер з gap-4 для рівного відступу */}
+                                <div className='flex items-center gap-4'>
+                                    
+                                    {/* ❗️ Іконка тепер жорстко зафіксована */}
+                                    <img 
+                                        className='w-[18px] h-[18px] object-contain opacity-70 group-hover:opacity-100 transition-opacity flex-shrink-0' 
+                                        src={stat.imgLink} 
+                                        alt={stat.title} 
+                                    />
+                                    
+                                    {/* ❗️ Текст залишається як був */}
+                                    <p className='text-[16px] font-medium text-silver tracking-[1px] group-hover:text-black transition-colors'>
+                                        {stat.title}
+                                    </p>
                                 </div>
+                                
+                                {/* Плюсик/Мінусик */}
+                                <span className='text-silver text-[18px] font-light group-hover:text-black'>
+                                    {collapsedIndex === index ? '-' : '+'}
+                                </span>
                             </div>
                             <div
                                 className={`transition-[max-height] duration-[400ms] ease-linear overflow-hidden ${

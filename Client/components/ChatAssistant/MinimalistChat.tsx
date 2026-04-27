@@ -11,6 +11,28 @@ const MinimalistChat = () => {
   const [message, setMessage] = useState("");
   const [isVoiceOpen, setIsVoiceOpen] = useState(false);
   const [showChatHistory, setShowChatHistory] = useState(false);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const deleteChat = (e: React.MouseEvent, chatId: string) => {
+    e.stopPropagation();
+    
+    if (window.confirm("Ви впевнені, що хочете видалити цей чат?")) {
+      setChatHistory((prev) => {
+        const newHistory = prev.filter((chat) => chat.id !== chatId);
+        localStorage.setItem("chatHistory", JSON.stringify(newHistory));
+        return newHistory;
+      });
+      
+      localStorage.removeItem(`messages_${chatId}`);
+      
+      setOpenMenuId(null);
+      
+      if (currentSessionId === chatId) {
+        setCurrentSessionId(`session-${Date.now()}`);
+        setMessages([{ id: 1, type: "bot", text: "Привіт!👋 Чим Вам допомогти?", showButtons: true }]);
+        setShowWelcome(true);
+      }
+    }
+  };
   const [isRecording, setIsRecording] = useState(false);
   const [messages, setMessages] = useState([
     {
@@ -122,7 +144,11 @@ const MinimalistChat = () => {
       showButtons: false,
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    setMessages((prev) => {
+      const updated = [...prev, userMessage];
+      localStorage.setItem(`messages_${currentSessionId}`, JSON.stringify(updated));
+      return updated;
+    });
     setMessage("");
     setShowWelcome(false);
 
@@ -148,7 +174,11 @@ const MinimalistChat = () => {
         showButtons: false,
       };
 
-      setMessages((prev) => [...prev, botResponse]);
+      setMessages((prev) => {
+        const updated = [...prev, botResponse];
+        localStorage.setItem(`messages_${currentSessionId}`, JSON.stringify(updated));
+        return updated;
+      });
 
       setChatHistory((prevHistory) => {
         const existingChatIndex = prevHistory.findIndex(chat => chat.id === currentSessionId);
@@ -406,8 +436,15 @@ const MinimalistChat = () => {
                         key={chat.id}
                         className="bg-white rounded-lg p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer"
                         onClick={() => {
-                          // Go back to chat view and potentially load specific conversation
-                          setShowChatHistory(false);
+                          setCurrentSessionId(chat.id);
+                          
+                          const savedMessages = localStorage.getItem(`messages_${chat.id}`);
+                          if (savedMessages) {
+                            setMessages(JSON.parse(savedMessages));
+                            setShowWelcome(false); 
+                          }
+                          
+                          setShowChatHistory(false); 
                         }}
                       >
                         <div className="flex items-start justify-between">
@@ -428,21 +465,45 @@ const MinimalistChat = () => {
                               </span>
                             </div>
                           </div>
-                          <button className="text-gray-400 hover:text-gray-600 transition-colors p-1">
-                            <svg
-                              className="w-5 h-5"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
+                          <div className="relative">
+                            <button 
+                              className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100"
+                              onClick={(e) => {
+                                e.stopPropagation(); // Зупиняємо відкриття чату
+                                // Відкриваємо меню для цього чату (або закриваємо, якщо воно вже відкрите)
+                                setOpenMenuId(openMenuId === chat.id ? null : chat.id);
+                              }}
                             >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
-                              />
-                            </svg>
-                          </button>
+                              <svg
+                                className="w-5 h-5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
+                                />
+                              </svg>
+                            </button>
+
+                            {/* Випадаюче меню */}
+                            {openMenuId === chat.id && (
+                              <div className="absolute right-0 mt-1 w-36 bg-white rounded-lg shadow-lg border border-gray-100 z-10 py-1">
+                                <button
+                                  onClick={(e) => deleteChat(e, chat.id)}
+                                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center transition-colors"
+                                >
+                                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                  Видалити
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     ))
@@ -453,7 +514,8 @@ const MinimalistChat = () => {
                 <>
                   {showWelcome && (
                     <div className="text-center mb-8">
-                      <div className="w-42 h-42 mx-auto mt-40 mb-4 bg-none rounded-full flex items-center justify-center">
+                      {/* mb-16 зробить великий гарний відступ вниз до повідомлення */}
+                      <div className="w-42 h-42 mx-auto mt-40 mb-16 bg-none rounded-full flex items-center justify-center">
                         <img
                           src="/say-hi.png"
                           alt="Say Hi"

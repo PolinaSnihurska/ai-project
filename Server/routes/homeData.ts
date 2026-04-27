@@ -1,98 +1,109 @@
 import express, { Request, Response } from 'express';
 import { client } from '../data/DB';
 const router = express.Router();
-router.get('/home/banner',async(req:Request,res:Response)=>{
-    const fetchQuery = `SELECT * FROM banners`;
+
+router.get('/home/banner', async(req:Request,res:Response) => {
     try {
-        const response = await client.query(fetchQuery);
-        res.status(200).json({data:response.rows})
+        res.status(200).json({
+            data: [
+                {
+                    id: 1,
+                    imglink: "https://images.unsplash.com/photo-1498049794561-7780e7231661?q=80&w=1200&auto=format&fit=crop",
+                    title: "Welcome to Electronics",
+                    subtitle: "Best devices inside",
+                    buttontext: "Shop Now"
+                }
+            ]
+        });
     } catch (error) {
-        res.sendStatus(500)
+        res.sendStatus(500);
     }
 });
+
 const getImage = async (productID:number) => {
     try {
         const result = await client.query(
-            `SELECT imageid, imglink, imgalt 
-             FROM productimages 
-             WHERE id = $1 AND isprimary = true`,
+            `SELECT id AS imageid, image AS imglink, name AS imgalt 
+             FROM electronics_products 
+             WHERE id = $1`,
             [productID]
         );
-        return result.rows[0];
+        return result.rows[0] || {imageid:0,imglink:'',imgalt:''};
     } catch (error) {
         return {imageid:0,imglink:'',imgalt:''};
     }
 };
+
 router.get('/home/deals',async(req:Request,res:Response)=>{
-    const fetchQuery = `SELECT deals.productid,products.title,productparams.stars,products.description,products.price,products.discount,deals.sold,deals.available,productparams.rating,productimages.imglink,productimages.imgalt,deals.end_time
-    FROM deals 
-    INNER JOIN products ON deals.productid = products.productid 
-    INNER JOIN productparams ON productparams.productid = deals.productid
-    INNER JOIN productimages ON productimages.productid = deals.productid
-    WHERE deals.productid = productimages.productid AND productimages.isprimary = true`;
+    const fetchQuery = `
+        SELECT ep.id AS productid, ep.name AS title, ep.rating AS stars, ep.price, ep.original_price AS discount, 
+               15 AS sold, 100 AS available, ep.image AS imglink, ep.name AS imgalt, 
+               NOW() + INTERVAL '1 day' AS end_time
+        FROM electronics_products ep
+        WHERE ep.original_price > ep.price 
+        LIMIT 2`;
     try {
         const response = await client.query(fetchQuery);
         res.status(200).json({data:response.rows})
     } catch (error) {
+        console.error("ПОМИЛКА У DEALS:", error);
         res.sendStatus(500)
     }
 })
+
 router.get('/home/trending',async(req:Request,res:Response)=>{
-    const fetchQuery = `SELECT products.productid,products.title,products.price,products.discount,productimages.imglink,productimages.imgalt,categories.name AS category_name,categories.maincategory
-    FROM products 
-    INNER JOIN productparams ON productparams.productid = products.productid
-    INNER JOIN productimages ON productimages.productid = products.productid
-    INNER JOIN categories ON categories.categoryid = products.categoryid
-    WHERE productimages.isprimary = true
-    ORDER BY productparams.views DESC
-    LIMIT 8`;
-    const fetchQuery1 = `SELECT products.productid,products.title,products.price,products.discount,productimages.imglink,productimages.imgalt,categories.name AS category_name,categories.maincategory
-    FROM products 
-    INNER JOIN productparams ON productparams.productid = products.productid
-    INNER JOIN productimages ON productimages.productid = products.productid
-    INNER JOIN categories ON categories.categoryid = products.categoryid
-    WHERE productimages.isprimary = true
-    ORDER BY productparams.rating DESC
-    LIMIT 8`;
-    const fetchQuery2 = `SELECT products.productid,products.title,products.price,products.discount,productimages.imglink,productimages.imgalt,categories.name AS category_name,categories.maincategory
-    FROM products 
-    INNER JOIN productparams ON productparams.productid = products.productid
-    INNER JOIN productimages ON productimages.productid = products.productid
-    INNER JOIN categories ON categories.categoryid = products.categoryid
-    WHERE productimages.isprimary = true
-    ORDER BY products.createdat DESC
-    LIMIT 8`;
+    const fetchQuery = `SELECT ep.id AS productid, ep.name AS title, ep.price, ep.original_price AS discount, ep.image AS imglink, ep.name AS imgalt, COALESCE(c.sub_category, 'general') AS category_name, COALESCE(c.main_category, 'electronics') AS maincategory
+    FROM electronics_products ep 
+    LEFT JOIN categories c ON c.id = ep.category_id
+    ORDER BY ep.rating_count DESC NULLS LAST LIMIT 8`;
+    
+    const fetchQuery1 = `SELECT ep.id AS productid, ep.name AS title, ep.price, ep.original_price AS discount, ep.image AS imglink, ep.name AS imgalt, COALESCE(c.sub_category, 'general') AS category_name, COALESCE(c.main_category, 'electronics') AS maincategory
+    FROM electronics_products ep 
+    LEFT JOIN categories c ON c.id = ep.category_id
+    ORDER BY ep.rating DESC NULLS LAST LIMIT 8`;
+    
+    const fetchQuery2 = `SELECT ep.id AS productid, ep.name AS title, ep.price, ep.original_price AS discount, ep.image AS imglink, ep.name AS imgalt, COALESCE(c.sub_category, 'general') AS category_name, COALESCE(c.main_category, 'electronics') AS maincategory
+    FROM electronics_products ep 
+    LEFT JOIN categories c ON c.id = ep.category_id
+    ORDER BY ep.id DESC LIMIT 8`;
+    
     try {
         const response = await client.query(fetchQuery);
         const response1 = await client.query(fetchQuery1);
         const response2 = await client.query(fetchQuery2);
         res.status(200).json({data:{trending:response.rows,top_rated:response1.rows,new_arrival:response2.rows}})
     } catch (error) {
+        console.error("ПОМИЛКА У ТРЕНДАХ:", error);
         res.sendStatus(500)
     }
 });
+
 router.get('/home/best-sellers',async(req:Request,res:Response)=>{
-    const fetchQuery = `SELECT products.productid,products.title,products.price,products.discount,productimages.imglink,productimages.imgalt,categories.name AS category_name,productparams.stars,productparams.rating
-    FROM products 
-    INNER JOIN productparams ON productparams.productid = products.productid
-    INNER JOIN productimages ON productimages.productid = products.productid
-    INNER JOIN categories ON categories.categoryid = products.categoryid
-    WHERE productimages.isprimary = true
-    ORDER BY productparams.sold DESC
-    LIMIT 4`;
+    const fetchQuery = `SELECT ep.id AS productid, ep.name AS title, ep.price, ep.original_price AS discount, ep.image AS imglink, ep.name AS imgalt, COALESCE(c.sub_category, 'general') AS category_name, ep.rating AS stars, ep.rating
+    FROM electronics_products ep 
+    LEFT JOIN categories c ON c.id = ep.category_id
+    ORDER BY ep.rating_count DESC NULLS LAST LIMIT 4`;
+    
     try {
         const response = await client.query(fetchQuery);
         res.status(200).json({data:response.rows})
     } catch (error) {
+        console.error("ПОМИЛКА У BEST SELLERS:", error);
         res.sendStatus(500)
     }
 });
+
 const fetchProducts = async () => {
-    const query = `SELECT products.productid,products.title,categories.name AS category,categories.maincategory,products.price,products.discount,productparams.stars,productparams.isnew,productparams.issale,productparams.isdiscount FROM products 
-    INNER JOIN categories ON products.categoryid = categories.categoryid 
-    INNER JOIN productparams ON products.productid = productparams.productid
-    ORDER BY productparams.stars DESC,productparams.rating DESC
-    LIMIT 12`;
+    const query = `
+        SELECT ep.id AS productid, ep.name AS title, 
+        COALESCE(c.sub_category, 'general') AS category, 
+        COALESCE(c.main_category, 'electronics') AS maincategory, 
+        ep.price, ep.original_price AS discount, ep.rating AS stars, 
+        false AS isnew, false AS issale, false AS isdiscount 
+        FROM electronics_products ep 
+        LEFT JOIN categories c ON c.id = ep.category_id
+        ORDER BY ep.rating DESC NULLS LAST LIMIT 12`;
+        
     try {
         const response = await client.query(query, []);
         if (response.rows.length === 0) return [];
@@ -101,7 +112,7 @@ const fetchProducts = async () => {
             response.rows.map(async (product) => {
                 const productID = product.productid;
 
-                const [colors, sizes, reviewCount,images] = await Promise.all([
+                const [colors, sizes, reviewCount, images] = await Promise.all([
                     getColors(productID),
                     getSizes(productID),
                     review(productID),
@@ -120,59 +131,36 @@ const fetchProducts = async () => {
 
         return products;
     } catch (error) {
-        console.error(error)
+        console.error("ПОМИЛКА У fetchProducts:", error);
         return [];
     }
 };
 
 const review = async (productID:number) => {
     try {
-        const result = await client.query(
-            `SELECT reviews.reviewid
-             FROM reviews 
-             INNER JOIN users ON users.userid = reviews.userid 
-             WHERE productid = $1 `,
-            [productID]
-        );
-        return result.rowCount === 0 ? 0 : result.rowCount;
+        const result = await client.query(`SELECT rating_count FROM electronics_products WHERE id = $1`, [productID]);
+        return result.rows[0] ? result.rows[0].rating_count : 0;
     } catch (error) {
         return 0;
     }
 };
 
 const getColors = async (productID:number) => {
-    try {
-        const result = await client.query(
-            `SELECT colorid, colorname, colorclass 
-             FROM productcolors 
-             WHERE productid = $1`,
-            [productID]
-        );
-        return result.rows.length === 0 ? [] : result.rows;
-    } catch (error) {
-        return [];
-    }
+    return []; 
 };
 
 const getSizes = async (productID:number) => {
-    try {
-        const result = await client.query(
-            `SELECT sizeid, sizename, instock 
-             FROM productsizes 
-             WHERE productid = $1`,
-            [productID]
-        );
-        return result.rows.length === 0 ? [] : result.rows;
-    } catch (error) {
-        return [];
-    }
+    return []; 
 };
+
 router.get('/home/products',async(req:Request,res:Response)=>{
     try {
         const response = await fetchProducts();
         res.status(200).json({data:response})
     } catch (error) {
+        console.error("ПОМИЛКА У ГОЛОВНИХ ПРОДУКТАХ:", error);
         res.sendStatus(500)
     }
 });
+
 export default router;

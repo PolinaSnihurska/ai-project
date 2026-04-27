@@ -199,16 +199,53 @@ export class ChatController {
                 }
 
                 products = matchedProducts;
-            } else if (entities.intent === 'search' || entities.intent === 'recommend') {
-                products = await ProductService.searchProducts(filters);
+            } else if (entities.intent === 'search' || entities.intent === 'recommend' || entities.intent === 'compare') {
+                
+                // ❗️ НОВА ЛОГІКА: Якщо ШІ знайшов кілька товарів у запиті
+                if (entities.searchTerms && entities.searchTerms.length > 0) {
+                    let combinedProducts: Product[] = [];
+                    
+                    for (const term of entities.searchTerms) {
+                        // ❗️ ЖОДНИХ ФІЛЬТРІВ! Передаємо тільки текст і ліміт.
+                        // Відкидаємо brand, productType, category тощо.
+                        const found = await ProductService.searchProducts({ 
+                            searchTerm: term,
+                            limit: 5 
+                        });
+                        combinedProducts = [...combinedProducts, ...found];
+                    }
+                    
+                    // Видаляємо дублікати
+                    products = Array.from(new Map(combinedProducts.map(p => [p.id, p])).values());
+                } else {
+                    // Звичайний пошук
+                    products = await ProductService.searchProducts(filters);
+                }
 
                 if (userBehavior && products.length > 0) {
                     products = this.personalizeProducts(products, userBehavior, context);
                 }
             }
 
+            if (products.length === 0 && context.selectedProducts && context.selectedProducts.length > 0) {
+                products = await ProductService.searchProducts({
+                    productIds: context.selectedProducts
+                });
+            }
+
             console.log('PRODUCTS SENT TO AI:', products.length);
             console.log('FIRST PRODUCT:', products[0]);
+
+            console.log('\n===ДЕБАг: ' + message + ' ===');
+            console.log('1. Intent:', entities.intent);
+            console.log('2. Search Term:', entities.searchTerm);
+            console.log('3. Збережені ID в контексті:', context.selectedProducts);
+            console.log('4. Знайдено товарів зараз:', products.length);
+            if (products.length > 0) {
+                console.log('5. ID першого товару:', products[0].id, 'або productid:', (products[0] as any).productid);
+                console.log('6. Ціна першого товару:', products[0].price);
+            }
+            console.log('=====================================\n');
 
             const aiResponse: AIResponse = await AIService.generateResponse(
                 message,

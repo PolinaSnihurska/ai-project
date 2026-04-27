@@ -11,7 +11,7 @@ const config: Config = {
         "footergray": "hsl(0, 0%, 60%)",
         "silver":"hsl(0, 0%, 47%)",
         "footerblack":"hsl(0, 0%, 13%)",
-        "salmon":"#ff91a4",
+        "salmon":"#4593c8",
         "sandyBrown": "hsl(29, 90%, 65%)",
         "bittersweet": "hsl(0, 100%, 70%)",
         "oceanGreen": "hsl(152, 51%, 52%)",
