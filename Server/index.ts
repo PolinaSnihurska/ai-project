@@ -20,10 +20,11 @@ app.use(bodyParser.json({ limit: '100kb' }));
 app.use(express.urlencoded({ extended: false }));
 app.use(helmet());
 
-const origin_url = process.env.FRONTEND_SERVER_ORIGIN || '*';
+const origin_url = process.env.FRONTEND_SERVER_ORIGIN as string;
+
 app.use(
   cors({
-    origin: origin_url,
+    origin: ['http://localhost:3000', origin_url], 
     credentials: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   })
