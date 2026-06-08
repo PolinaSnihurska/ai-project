@@ -1,4 +1,4 @@
-import { Client } from 'pg';
+import { Pool } from 'pg'; // Змінили Client на Pool
 import 'dotenv/config';
 
 type DetailsType = {
@@ -17,20 +17,31 @@ const details: DetailsType = {
   database: process.env.DB_NAME || '',
 };
 
-const client = new Client({
+// Створюємо Pool, але називаємо його client для сумісності з твоїм кодом
+const client = new Pool({
   user: details.user,
   password: details.password,
   host: details.host,
   port: details.port,
   database: details.database,
-  ssl: details.host !== 'localhost' ? { rejectUnauthorized: false } : false
+  ssl: details.host !== 'localhost' ? { rejectUnauthorized: false } : false,
+  
+  // Додаткові налаштування для стабільності в хмарі
+  max: 10, // Максимальна кількість з'єднань
+  idleTimeoutMillis: 30000, // Закривати неактивні з'єднання
+});
+
+// Додаємо захист від падіння сервера, якщо Neon розірве з'єднання в фоні
+client.on('error', (err) => {
+  console.error('Unexpected error on idle database client', err);
 });
 
 const connectDB = async () => {
   try {
-    await client.connect();
-    console.log('Connected to the database');
-  } catch (err:any) {
+    // Pool підключається автоматично під час запиту, тому ми просто робимо тестовий пінг
+    await client.query('SELECT 1');
+    console.log('Connected to the database via Pool');
+  } catch (err: any) {
     console.error('Connection error', err.stack);
     process.exit(1);
   }
