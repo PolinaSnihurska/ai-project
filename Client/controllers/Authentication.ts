@@ -18,12 +18,18 @@ const useAuth = () => {
       switch (res.status) {
         case 200:
           try {
+            if (res.data.token) {
+              localStorage.setItem('token', res.data.token);
+              localStorage.setItem('userName', res.data.userData.userName);
+              localStorage.setItem('role', res.data.userData.role ?? '');
+            }
             const data = {
               userID: res.data.userData.userID,
               userName: res.data.userData.userName,
               email: res.data.userData.email,
               mobile_number: res.data.userData.mobile_number,
               dob: res.data.userData.dob,
+              role: res.data.userData.role ?? '',
             };
             dispatch(setDefaultAccount(data));
             setloading(false);
@@ -85,6 +91,7 @@ const useAuth = () => {
                 email: res.data.userData.email,
                 mobile_number: res.data.userData.mobile_number,
                 dob: res.data.userData.dob,
+                role: res.data.userData.role ?? '',
               };
               dispatch(setDefaultAccount(data));
               setLoggedIn(true);
@@ -102,18 +109,31 @@ const useAuth = () => {
         // console.log("Login Failed");
       }
   };
+  const logout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('userName');
+    localStorage.removeItem('role');
+    dispatch(setDefaultAccount(null as any));
+    setLoggedIn(false);
+    router.push('/sign-in'); 
+  };
   const checkAuthLogin = async (authCode:string,setloading:React.Dispatch<React.SetStateAction<boolean>>)=>{
     try {
       const res = await authDataHandler(authCode);
       switch (res.status) {
         case 200:
           try {
+            if (res.data.token) {
+              localStorage.setItem('token', res.data.token);
+              localStorage.setItem('role', res.data.userData.role ?? '');
+            }
             const data = {
               userID: res.data.userData.userID,
               userName: res.data.userData.userName,
               email: res.data.userData.email,
               mobile_number: res.data.userData.mobile_number,
               dob: res.data.userData.dob,
+              role: res.data.userData.role ?? '',
             };
             dispatch(setDefaultAccount(data));
             setloading(false);

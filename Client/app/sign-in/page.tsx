@@ -8,7 +8,8 @@ import { store } from '@/app/store'
 import { GoogleOAuthProvider } from '@react-oauth/google';
 const page = () => {
   return (
-    <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_FRONTEND_GOOGLE_CLIENT_ID as string}>
+    // <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_FRONTEND_GOOGLE_CLIENT_ID as string}>
+    <GoogleOAuthProvider clientId="1234567890-dummy.apps.googleusercontent.com">
     <AppProvider>
       <Provider store={store}>
         <DialogBoxes/>

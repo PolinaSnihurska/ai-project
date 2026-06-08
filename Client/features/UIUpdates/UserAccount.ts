@@ -62,6 +62,7 @@ interface Account{
   email:string;
   mobile_number:number;
   dob:string;
+  role:string;
 }
 interface UserState {
   defaultAccount: Account;
@@ -75,7 +76,7 @@ interface UserState {
 
 // Initial state for each piece of state
 const initialState: UserState = {
-  defaultAccount: {userID:0,userName:'', email:'', mobile_number:0, dob:''},
+  defaultAccount: {userID:0,userName:'', email:'', mobile_number:0, dob:'', role:''},
   addresses: [],
   giftCards: [],
   coupons: [],

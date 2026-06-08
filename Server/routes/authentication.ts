@@ -1,5 +1,5 @@
 import dotenv from 'dotenv';
-dotenv.config(); // Додайте це на початку файлу!
+dotenv.config();
 
 import express, { Request, Response } from 'express';
 import { client } from '../data/DB';
@@ -20,7 +20,6 @@ interface JwtPayload {
     exp: number;
 }
 
-// Функція для отримання JWT секрета з перевіркою
 const getJwtSecret = (): string => {
     const secret = process.env.JWT_ENCRYPTION_KEY;
     if (!secret) {
@@ -32,13 +31,11 @@ const getJwtSecret = (): string => {
     return secret;
 };
 
-// Хелпер для генерації токена
 const generateToken = (userID: number, expiresIn: string = JWT_EXPIRATION): string => {
     const secret = getJwtSecret();
     return jwt.sign({ userID }, secret, { expiresIn });
 };
 
-// Хелпер для верифікації токена
 const verifyToken = (token: string): JwtPayload => {
     const secret = getJwtSecret();
     return jwt.verify(token, secret) as JwtPayload;
@@ -61,7 +58,6 @@ router.post('/user/signup/:promotional', signUpSchema, async (req: Request, res:
                 dob
             } = matchedData(req);
             
-            // Check if email or mobile number already exists
             const checkQuery = `SELECT * FROM "${userTable}" WHERE email = $1 OR mobile_number = $2;`;
             const checkValues = [email, mobile_number];
             const checkResult = await client.query(checkQuery, checkValues);
@@ -70,10 +66,8 @@ router.post('/user/signup/:promotional', signUpSchema, async (req: Request, res:
                 return res.status(205).json({ error: 'Email or mobile number already exists' });
             }
     
-            // Hash the password
             const hash = await bcrypt.hash(password, saltRounds);
     
-            // Insert the new user
             const insertQuery = `
                 INSERT INTO "${userTable}" (userID, userName, email, password, mobile_number, dob, creation_ip, role, update_ip, promotional) 
                 VALUES ($1, $2, $3, $4, $5, $6, $7, 'customer', $7, $8);
@@ -82,7 +76,6 @@ router.post('/user/signup/:promotional', signUpSchema, async (req: Request, res:
     
             await client.query(insertQuery, insertValues);
             
-            // Generate token
             const token = generateToken(userID);
             
             return res.status(200).json({ message: 'User registered successfully', token });
@@ -128,7 +121,8 @@ router.post('/user/signin/:remember', signInSchema, async (req: Request, res: Re
                 userID: user.userid,
                 email: user.email,
                 mobile_number: user.mobile_number,
-                dob: user.dob
+                dob: user.dob,
+                role: user.role
             };
             
             // Generate token
@@ -175,7 +169,8 @@ router.post('/user/session-check', tokenSchema, async (req: Request, res: Respon
                 userID: user.userid,
                 email: user.email,
                 mobile_number: user.mobile_number,
-                dob: user.dob
+                dob: user.dob,
+                role: user.role
             };
 
             return res.status(200).json({ message: 'Sign-in successful', userData });
@@ -210,7 +205,8 @@ router.post('/auth/google', googleAuthSchema, async (req: Request, res: Response
                 userID: user.userid,
                 email: user.email,
                 mobile_number: user.mobile_number,
-                dob: user.dob
+                dob: user.dob,
+                role: user.role
             };
             
             // Generate token
@@ -254,7 +250,8 @@ router.post('/native/auth/google', googleAuthSchemaNative, async (req: Request, 
                 userID: user.userid,
                 email: user.email,
                 mobile_number: user.mobile_number,
-                dob: user.dob
+                dob: user.dob,
+                role: user.role
             };
             
             return res.status(200).json({ message: 'Sign-in successful', token, userData });

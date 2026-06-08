@@ -23,6 +23,7 @@ const client = new Client({
   host: details.host,
   port: details.port,
   database: details.database,
+  ssl: details.host !== 'localhost' ? { rejectUnauthorized: false } : false
 });
 
 const connectDB = async () => {

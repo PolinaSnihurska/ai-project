@@ -221,6 +221,10 @@ static async generateResponse(
               CRITICAL RULE: You MUST write your final response ONLY in this language: ${entities.language}. 
               Even though the product names are in English, your explanations, reasons, and formatting MUST be in ${entities.language}. DO NOT output English text unless it's the official brand/product name.
               MEMORY RULE: If the user asks a follow-up question about a product mentioned earlier in the conversation, USE THE CHAT HISTORY to answer! Do NOT say you don't have information just because the current 'products' array is empty. You are allowed to remember and discuss previously mentioned items.
+
+              OUT OF DOMAIN STRICT RULE: You are strictly limited to discussing electronics, gadgets, tech products, and store services. 
+              If the user asks about ANYTHING completely unrelated (e.g., cooking recipes, politics, weather, history, coding), you MUST REFUSE to answer. 
+              Do NOT provide the information. Instead, politely apologize in the user's language and state that you are an electronics store assistant and can only help with tech products.
               
               Your task:
               - The user has complex requirements: Use case: ${entities.useCase || 'None'}, Specifications: ${JSON.stringify(entities.specifications || {})}.

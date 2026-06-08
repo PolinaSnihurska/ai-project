@@ -5,10 +5,12 @@ import express, { Express, Request, Response } from 'express';
 import bodyParser from 'body-parser';
 import cors from 'cors';
 import helmet from 'helmet';
-
+import adminRoutes from './routes/admin';
+import { verifyAdmin } from './middleware/adminMiddleware';
 import routes from './routes';
 import { connectDB, client } from './data/DB';
 import rateLimiterMiddleware from './middleware/rateLimit';
+import adminProductRoutes from './routes/adminProducts';
 
 const app: Express = express();
 app.set('trust proxy', true);
@@ -21,7 +23,6 @@ app.use(express.urlencoded({ extended: false }));
 app.use(helmet());
 
 const origin_url = process.env.FRONTEND_SERVER_ORIGIN as string;
-
 app.use(
   cors({
     origin: ['http://localhost:3000', origin_url], 
@@ -29,6 +30,11 @@ app.use(
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   })
 );
+
+
+app.use('/api/admin', verifyAdmin, adminRoutes); 
+app.use('/api/admin', adminProductRoutes);
+app.use('/api', routes);
 
 app.get('/', (_req: Request, res: Response) => {
   res.status(200).json({ message: 'Success' });

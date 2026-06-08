@@ -4,26 +4,44 @@ import { useApp } from '@/Helpers/AccountDialog';
 import { useAppSelector } from '@/app/hooks';
 import signOutHandler from '@/app/api/signout';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+
 const Account = () => {
   const [isDropdownVisible, setDropdownVisible] = useState(false);
   const { appState } = useApp();
   const router = useRouter();
-  const userName = useAppSelector((state)=>state.userState.defaultAccount.userName);
+  
+  // 1. Беремо весь об'єкт користувача з Redux
+  const user = useAppSelector((state)=>state.userState.defaultAccount);
+  const userName = user?.userName;
+
   function signOut(){
     signOutHandler();
     router.push('/signed-out');
   }
+
   return (
     <div onMouseEnter={()=>setDropdownVisible(true)} onMouseLeave={()=>setDropdownVisible(false)} className="relative mx-auto my-auto">
       <button className='mb-2'>
         <UserIcon width={40}/>
       </button>
+      
       {(isDropdownVisible && appState.loggedIn) && (
-        <div id="dropdownAvatar" className="z-30 bg-white divide-y divide-gray-100 rounded-lg absolute drop-shadow-custom-xl w-44">
+        <div id="dropdownAvatar" className="z-30 bg-white divide-y divide-gray-100 rounded-lg absolute right-0 drop-shadow-custom-xl w-44">
           <div className="px-4 py-3 text-sm text-gray-500 ">
-            <div>{userName}</div>
+            <div className="font-medium text-gray-900 truncate">{userName}</div>
           </div>
-          <ul className="py-2 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="dropdownUserAvatarButton">
+          <ul className="py-2 text-sm text-gray-700" aria-labelledby="dropdownUserAvatarButton">
+            
+          {user?.role === 'admin' && (
+            <li>
+              <Link href="/admin/products" className="block px-4 py-2 bg-blue-50 text-blue-700 font-semibold hover:bg-blue-100 transition-colors">
+                Dashboard
+              </Link>
+            </li>
+          )}
+            {/* ======================= */}
+
             <li>
               <a href="/account-settings" className="block px-4 py-2 hover:bg-gray-100 text-gray-500">Settings</a>
             </li>
@@ -32,17 +50,19 @@ const Account = () => {
             </li>
           </ul>
           <div className="py-2">
-            <button onClick={signOut} className="block px-4 w-full text-start py-2 text-sm text-gray-400 hover:bg-gray-100">Sign out</button>
+            <button onClick={signOut} className="block w-full text-start px-4 py-2 text-sm text-gray-400 hover:bg-gray-100">Sign out</button>
           </div>
         </div>
       )}
+      
+      {/* ... Нижня частина для неавторизованих залишається без змін ... */}
       {(isDropdownVisible && !appState.loggedIn) && (
-        <div id="dropdownAvatar" className="z-30 bg-white divide-y divide-gray-100 rounded-lg absolute drop-shadow-custom-xl w-44">
+        <div id="dropdownAvatar" className="z-30 bg-white divide-y divide-gray-100 rounded-lg absolute right-0 drop-shadow-custom-xl w-44">
           <div className="px-4 py-3 text-sm text-gray-500 flex gap-2">
             <div>New User?</div>
-            <a href='/sign-up' className='text-primary-800'>Register</a>
+            <a href='/sign-up' className='text-primary-800 font-medium'>Register</a>
           </div>
-          <ul className="py-2 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="dropdownUserAvatarButton">
+          <ul className="py-2 text-sm text-gray-700" aria-labelledby="dropdownUserAvatarButton">
             <li>
               <a href="/sign-in" className="block px-4 py-2 text-primary-800 hover:bg-gray-100">Sign In</a>
             </li>

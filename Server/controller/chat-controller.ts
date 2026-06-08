@@ -3,6 +3,7 @@ import { randomUUID } from 'crypto';
 import { ContextService, ChatMessage } from '../services/contextService';
 import { ProductService, ProductFilters, Product } from '../services/productService';
 import { AIService, ExtractedEntities, AIResponse } from '../services/aiService';
+import { client } from '../data/DB';
 
 export class ChatController {
     static async handleMessage(
@@ -13,6 +14,7 @@ export class ChatController {
         userID?: number
     ): Promise<void> {
         try {
+            const startTime = Date.now();
             const finalSessionId = sessionId || randomUUID();
 
             const context = ContextService.getContext(finalSessionId, userID);
@@ -94,6 +96,24 @@ export class ChatController {
                     role: 'assistant',
                     content: entities.clarificationQuestion
                 });
+
+                try {
+                    const responseTimeMs = Date.now() - startTime;
+                    const insertLogQuery = `
+                        INSERT INTO "chatbot_logs" (user_id, user_message, bot_response, response_time_ms, is_resolved)
+                        VALUES ($1, $2, $3, $4, $5)
+                    `;
+                    // Жорстко ставимо false, бо запит не вирішено (бот перепитує)
+                    await client.query(insertLogQuery, [
+                        userID || null, 
+                        message, 
+                        entities.clarificationQuestion, 
+                        responseTimeMs, 
+                        false // <--- is_resolved = false
+                    ]);
+                } catch (dbError) {
+                    console.error('Помилка запису unresolved аналітики:', dbError);
+                }
 
                 res.status(200).json({
                     sessionId: finalSessionId,
@@ -201,13 +221,10 @@ export class ChatController {
                 products = matchedProducts;
             } else if (entities.intent === 'search' || entities.intent === 'recommend' || entities.intent === 'compare') {
                 
-                // ❗️ НОВА ЛОГІКА: Якщо ШІ знайшов кілька товарів у запиті
                 if (entities.searchTerms && entities.searchTerms.length > 0) {
                     let combinedProducts: Product[] = [];
                     
                     for (const term of entities.searchTerms) {
-                        // ❗️ ЖОДНИХ ФІЛЬТРІВ! Передаємо тільки текст і ліміт.
-                        // Відкидаємо brand, productType, category тощо.
                         const found = await ProductService.searchProducts({ 
                             searchTerm: term,
                             limit: 5 
@@ -215,10 +232,8 @@ export class ChatController {
                         combinedProducts = [...combinedProducts, ...found];
                     }
                     
-                    // Видаляємо дублікати
                     products = Array.from(new Map(combinedProducts.map(p => [p.id, p])).values());
                 } else {
-                    // Звичайний пошук
                     products = await ProductService.searchProducts(filters);
                 }
 
@@ -280,6 +295,21 @@ export class ChatController {
                     language: entities.language || language
                 }
             };
+
+            try {
+                const responseTimeMs = Date.now() - startTime;
+                const isResolved = !entities.needsClarification && !aiResponse.text.includes('AI ERROR');
+
+                const insertLogQuery = `
+                    INSERT INTO "chatbot_logs" (user_id, user_message, bot_response, response_time_ms, is_resolved)
+                    VALUES ($1, $2, $3, $4, $5)
+                `;
+                const values = [userID || null, message, aiResponse.text, responseTimeMs, isResolved];
+                
+                await client.query(insertLogQuery, values);
+            } catch (dbError) {
+                console.error('Помилка запису аналітики чат-бота:', dbError);
+            }
 
             res.status(200).json(response);
         } catch (error: any) {
