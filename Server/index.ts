@@ -23,11 +23,27 @@ app.use(express.urlencoded({ extended: false }));
 app.use(helmet());
 
 const origin_url = process.env.FRONTEND_SERVER_ORIGIN as string;
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://ai-project-9c512oykx-12345s-projects-0ea5045f.vercel.app', 
+  process.env.FRONTEND_SERVER_ORIGIN
+].filter(Boolean);
+
 app.use(
   cors({
-    origin: ['http://localhost:3000', origin_url], 
+    origin: (origin, callback) => {
+      // Якщо запит без origin (наприклад, серверні запити), дозволяємо
+      if (!origin) return callback(null, true);
+      
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        console.error(`CORS blocked request from: ${origin}`);
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
   })
 );
 
