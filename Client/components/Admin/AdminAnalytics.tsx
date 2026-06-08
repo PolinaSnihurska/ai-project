@@ -20,7 +20,7 @@ import {
   YAxis,
 } from 'recharts';
 
-const API_URL = 'http://localhost:3500/api/admin/stats/overview';
+const API_URL = `${process.env.NEXT_PUBLIC_API_URL}/admin/stats/overview`;
 
 interface OverviewStats {
   totalConversations: number;

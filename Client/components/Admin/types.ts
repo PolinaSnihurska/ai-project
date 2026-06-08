@@ -23,7 +23,7 @@ export interface ProductFormData {
   status: ProductStatus;
 }
 
-export const API_BASE = 'http://localhost:3500/api/admin';
+export const API_BASE = `${process.env.NEXT_PUBLIC_API_URL}/admin`;
 
 export const CATEGORY_OPTIONS = ['Tech', 'Fashion', 'Home', 'Sports', 'Beauty', 'Books'];
 
