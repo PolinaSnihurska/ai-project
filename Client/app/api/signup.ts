@@ -32,6 +32,7 @@ export default async function signUpHandler({ userName, email, password, mobile_
     })
     return {status:response.status,data:response.data}
   } catch (error) {
-    return {status:500,error: 'Internal Server Error' }
-  }
+  console.error("AXIOS LOGIN ERROR:", error);
+  return {status:500,error: 'Internal Server Error' }
+}
 };

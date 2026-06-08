@@ -34,6 +34,7 @@ export default async function signInHandler({email,password,remember}:{email:str
     }
     return {status:response.status,data:response.data}
   } catch (error) {
+    console.error("AXIOS LOGIN ERROR:", error);
     return {status:500,error: 'Internal Server Error' }
   }
 };
