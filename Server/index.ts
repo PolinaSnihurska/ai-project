@@ -25,14 +25,14 @@ app.use(helmet());
 const origin_url = process.env.FRONTEND_SERVER_ORIGIN as string;
 const allowedOrigins = [
   'http://localhost:3000',
-  'https://ai-project-9c512oykx-12345s-projects-0ea5045f.vercel.app', 
+  'https://ai-project-9c512oykx-12345s-projects-0ea5045f.vercel.app',
+  'https://ai-project-gf68shvut-12345s-projects-0ea5045f.vercel.app',
   process.env.FRONTEND_SERVER_ORIGIN
 ].filter(Boolean);
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Якщо запит без origin (наприклад, серверні запити), дозволяємо
       if (!origin) return callback(null, true);
       
       if (allowedOrigins.includes(origin)) {
