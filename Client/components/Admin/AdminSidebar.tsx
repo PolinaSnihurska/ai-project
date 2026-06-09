@@ -74,9 +74,12 @@ const AdminSidebar = () => {
             Main menu
           </p>
           <ul className="space-y-1">
-            {mainMenu.map(({ id, label, icon: Icon, href }) => {
-              const active = pathname === href || pathname.startsWith(`${href}/`);
-              return (
+          {mainMenu.map(({ id, label, icon: Icon, href }) => {
+            const active = (href === '/admin' || href === '/')
+              ? pathname === href
+              : pathname === href || pathname.startsWith(`${href}/`);
+
+            return (
               <li key={id}>
                 <Link
                   href={href}
@@ -94,8 +97,8 @@ const AdminSidebar = () => {
                   {label}
                 </Link>
               </li>
-              );
-            })}
+            );
+          })}
           </ul>
         </div>
 
