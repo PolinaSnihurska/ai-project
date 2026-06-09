@@ -27,6 +27,7 @@ const allowedOrigins = [
   'http://localhost:3000',
   'https://ai-project-9c512oykx-12345s-projects-0ea5045f.vercel.app',
   'https://ai-project-gf68shvut-12345s-projects-0ea5045f.vercel.app',
+  'https://ai-project-6vmvydyfi-12345s-projects-0ea5045f.vercel.app/',
   process.env.FRONTEND_SERVER_ORIGIN
 ].filter(Boolean);
 
