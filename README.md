@@ -1,151 +1,97 @@
-# eCommerce Website
+# E-Commerce AI Consultant API
 
-Welcome to the repository for our full stack eCommerce website built using the PERN stack (PostgreSQL, Express, React, Node.js). This project demonstrates a comprehensive online shopping experience with a variety of features and pages.
+![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![Node.js](https://img.shields.io/badge/Node.js-Backend-green.svg)
+![AI Integration](https://img.shields.io/badge/AI-OpenAI%20%7C%20LangChain-orange.svg)
+![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)
 
-![Desktop](/website-demo-image/desktop.png)
-![Mobile](/website-demo-image/mobile.png)
-![Showcase1](/website-demo-image/1.png)
-![Showcase2](/website-demo-image/2.png)
-## Features
+> A scalable backend service integrating a conversational AI consultant into an e-commerce platform, enabling smart product discovery and personalized shopping experiences.
 
-### eCommerce Features
-- **Categories & Subcategories:** Well-organized categories and subcategories for easy navigation.
-- **Products:** Detailed product pages with options for different sizes and colors.
-- **Payment Gateway:** Integrated with individual products and cart for secure transactions. ( Stripe )
-- **Wishlist:** Option to save favorite products.
-- **Special Deals:** Exclusive deals displayed on the homepage.
-- **Banners:** Eye-catching banners to highlight promotions.
-- **Responsive Design:** Modern and mobile-friendly layout.
-- **Quantity Purchase:** Ability to purchase multiple quantities of a product.
-- **Homepage Algorithms:** Various algorithms to display products dynamically on the homepage.
-- **Filtering & Sorting:** Advanced filtering and sorting options on search and category pages.
-- **JWT Session:** Secure user sessions with JWT.
-- **Encrypted Passwords:** Enhanced security with password encryption.
-- **OAuth Support:** Easy registration and sign-in with OAuth.
-- **Payment on Delivery:** Option to pay upon delivery.
-- **Order Tracking:** Track orders with a detailed orders page.
-- **Order Summary:** Comprehensive order summary page.
-- **Custom Checkout:** Tailored checkout experience.
-- **Review System:** Post, delete, and edit reviews with a dedicated reviews page.
-- **Dynamic Routing:** Smooth navigation with dynamic routing.
-- **Product Quickview:** Quickly view product details and add to cart or go to the product page.
-- **Active Review & Rating Calculation:** Backend will update variables required for algorithms to work properly, actively calculate rating's & frontend required parameters.
+## Overview
 
-### Other Pages
-- **Category Specific Page:** Detailed pages for each category.
-- **Subcategory Page:** Dedicated pages for subcategories.
-- **Blog:** Informative blog section.
-- **Contact Page:** Easy-to-use contact form.
-- **Services Page:** Overview of offered services.
-- **About Us:** Information about the company.
-- **Privacy Policy:** Details on data privacy.
-- **Secure Payment Page:** Information on secure payment methods.
-- **Terms and Conditions:** Detailed terms and conditions.
-- **Refund and Cancellation Policy:** Policies on refunds and cancellations.
+Traditional e-commerce platforms rely on keyword-based searches and static filters, which can lead to search fatigue. This project introduces an **AI-powered Virtual Consultant** that interacts with users in natural language, understands their intent, and recommends products using **Retrieval-Augmented Generation (RAG)**. 
 
-## Installation
+The backend is designed with a focus on clean architecture, performance, and seamless LLM (Large Language Model) integration without compromising the core e-commerce business logic.
 
-1. Clone the repository:
-   ```sh
-   git clone https://github.com/HarmanPreet-Singh-XYT/E-Commerce.git
-2. Navigate to the project directory:
-   ```sh
-   cd ecommerce-website
-3. Install dependencies for the server:
-   ```sh
-   cd Server & npm install
-4. Install dependencies for the client:
-   ```sh
-   cd ../Client & npm install
-5. Set up environment variables in a .env file for both server and client.
+## Key Features
 
-## Running the Application (Development)
+* **Conversational Commerce:** Natural language search and chat interface for users to ask about products, comparisons, and availability.
+* **Smart Context Injection (RAG):** The AI does not hallucinate; it answers strictly based on the real-time product catalog using vector embeddings.
+* **Automated Product Tagging:** Background workers that automatically generate metadata and vector embeddings for new products.
+* **Core E-Commerce API:** RESTful endpoints for user management, product catalog, cart operations, and order processing.
+* **Session Memory:** The AI remembers the context of the conversation within a specific shopping session.
 
-1. Start the Server:
-   ```sh
-   cd Server & npm run dev
-2. Start the client:
-    ```sh
-   cd Client & npm run dev
+## System Architecture
 
-## Setting Up PostgreSQL Tables
-
-1. Create a Database named 'ecommerce'.
-2. Restore the Database using ecommerce.sql with Given SQL File.
-3. Make sure PostgreSQL server is Running, Set up Environment Variables and done.
-
-## Getting Started With Docker
-**Dockerfiles can be found for both Client and Server in their respective directories.**
-**These docker files can be run individually or together through docker compose.**
-
-## Running Individually
-
-1. Go to any directory whether it is Client or Server.
-2. Use Terminal and execute the following command to build and Get image for the following type:
-   ```sh
-   docker build -t ecommerce-client .
-      or
-   docker build -t ecommerce-server .
-3. These images then can be run through Docker Desktop or through terminal by following command:
-   ```sh
-   docker run -p 3000:3000 --name your-container-name -e BACKEND_URL=your_backend_url -e AUTH_KEY=your_auth_key -e JWT_KEY=your_jwt_key -e NEXT_PUBLIC_FRONTEND_GOOGLE_CLIENT_ID=your_google_client_id -e NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=your_stripe_key -e NEXT_PUBLIC_DOMAIN=your_domain ecommerce-client
-      or
-   docker run -p 3500:3500 --name your-container-name -e FRONTEND_SERVER_ORIGIN=your_frontend_server_origin -e DB_USER=your_db_user -e DB_PASS=your_db_pass -e DB_HOST=your_db_host -e DB_PORT=your_db_port -e DB_NAME=your_db_name -e SMTP_USER=your_smtp_user -e SMTP_SUPPORT=your_smtp_support -e SMTP_HOST=your_smtp_host -e SMTP_SENDERNAME=your_smtp_sendername -e SMTP_PASS=your_smtp_pass -e JWT_ENCRYPTION_KEY=your_jwt_encryption_key -e JWT_AUTH_KEY=your_jwt_auth_key -e GOOGLE_CLIENT_ID=your_google_client_id -e GOOGLE_CLIENT_SECRET=your_google_client_secret -e STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key ecommerce-server
-## Running Together with Docker Compose
-1. Go to root directory where docker-compose.yml exists.
-2. create a .env file with All the Environment Variables in it including for both Server and Client
-3. then Start docker-compose with the following command:
-   ```sh
-   docker compose up --watch
-**As the Compose also contains PostgreSQL server, you also need to connect to the PostgreSQL server and Restore the ecommerce.sql file into the ecommerce database to get all the following tables and product and site data.**
-**or**
-**Simply remove PostgreSQL service from the following docker-compose.yml file if you have your own PostgreSQL server running.**
-## Available Docker Images
-**There are two Following images available on Docker hub for Client and Server**
-1. Client Image:
-   ```sh
-   docker pull harmanpreet27/ecommerce-client
-2. Server Image:
-   ```sh
-   docker pull harmanpreet27/ecommerce-backend
-## Contributing
-
-**We welcome contributions! Please fork the repository and submit a pull request.**
-
-## License
-
-**This project is licensed under the MIT License. See the LICENSE file for more details.**
-
-## Contact
-
-**For any questions or feedback, please contact us at harmanpreetsingh@programmer.net**
-
-## Environment Variables (Required before Starting)
-
-**For Client**
-
-- **BACKEND_URL** (Cors Requirement)
-- **AUTH_KEY** (Authorization key for Secure Frontend & Backend Communication)
-- **JWT_KEY** (JWT Key for Decryption and encryption)
-- **NEXT_PUBLIC_FRONTEND_GOOGLE_CLIENT_ID** (Google Client ID For OAuth)
-- **NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY** (Stripe Key for payment Gateway)
-- **NEXT_PUBLIC_DOMAIN** (**Optional*** Frontend URL)
-
-**For Server**
-
-- **FRONTEND_SERVER_ORIGIN** (Frontend Server URL)
-- **DB_USER** (Database UserName)
-- **DB_PASS** (Database Password)
-- **DB_HOST** (Database HostName)
-- **DB_PORT** (Database Port)
-- **DB_NAME** (Database Name)
-- **SMTP_USER** (SMTP UserName (email) )
-- **SMTP_SUPPORT** (Customer Support Email for Contact)
-- **SMTP_HOST** (SMTP HostName)
-- **SMTP_SENDERNAME** (SMTP Sender)
-- **SMTP_PASS** (SMTP Password)
-- **JWT_ENCRYPTION_KEY** (Key for secure encryption and decryption)
-- **JWT_AUTH_KEY** (Authorization key for Secure Frontend & Backend Communication)
-- **GOOGLE_CLIENT_ID** (Google Client ID for OAuth)
-- **GOOGLE_CLIENT_SECRET** (Google Client Secret for OAuth)
-- **STRIPE_PUBLISHABLE_KEY** (Stripe Key for Payment Gateway)
+```text
+[Client] --> (REST API Gateway)
+                 |
+                 +--> [Core E-Commerce Services] <--> (PostgreSQL Relational DB)
+                 |
+                 +--> [AI Consultant Service] 
+                             |
+                             +--> (Vector DB / pgvector) - Product Embeddings
+                             |
+                             +--> (LLM Provider / OpenAI API)
+Tech Stack
+Core Backend: Node.js, Express.js / NestJS (Update based on your exact framework)
+Database: PostgreSQL (for relational data like Users, Orders, Products)
+Vector Store: pgvector / Pinecone (for fast semantic search of products)
+AI & NLP: OpenAI API (GPT-4/GPT-3.5), LangChain for prompt orchestration
+Infrastructure: Docker, Docker Compose
+Documentation: Swagger / OpenAPI
+AI Integration Workflow
+User Query: User asks, "I need a laptop for video editing under $1500."
+Embedding Generation: The backend converts this query into a vector embedding.
+Semantic Search: We query the Vector Database to find the top 5 laptops matching the semantic intent and price filter.
+Context Assembly: The backend constructs a system prompt including the retrieved laptops and the user's chat history.
+LLM Generation: The LLM generates a human-like, persuasive response recommending the best options from the provided context.
+Getting Started
+Prerequisites
+Docker & Docker Compose
+Node.js (v18+)
+An active OpenAI API Key
+Installation
+Clone the repository:
+Bash
+git clone [https://github.com/PolinaSnihurska/ai-project.git](https://github.com/PolinaSnihurska/ai-project.git)
+cd ai-project
+Environment Variables:
+Copy the example .env file and fill in your credentials.
+Bash
+cp .env.example .env
+Required variables:
+Code snippet
+DATABASE_URL=postgres://user:password@localhost:5432/ecommerce
+OPENAI_API_KEY=sk-...
+PORT=8000
+Run with Docker:
+Launch the API, PostgreSQL database, and run migrations in one command:
+Bash
+docker-compose up --build -d
+Access the API:
+Server runs on http://localhost:8000
+Swagger Docs available at http://localhost:8000/api/docs
+Core API Endpoints
+AI Consultant
+POST /api/v1/chat/message - Send a message to the AI consultant.
+GET /api/v1/chat/sessions/:id - Retrieve chat history for a session.
+E-Commerce (Catalog & Orders)
+GET /api/v1/products - List products (with optional traditional filters).
+GET /api/v1/products/:id - Get product details.
+POST /api/v1/cart - Add an AI-recommended item to the cart.
+Project Structure
+Plaintext
+├── src/
+│   ├── api/            # Controllers and routing
+│   ├── services/       # Core business logic (Cart, Products)
+│   ├── ai/             # LLM orchestration, prompt templates, embeddings
+│   ├── models/         # Database schemas and ORM entities
+│   └── config/         # Environment and third-party integrations
+├── docker-compose.yml
+├── Dockerfile
+└── README.md
+Future Improvements
+[ ] Implement Redis for caching frequent AI queries and saving LLM costs.
+[ ] Add streaming responses (Server-Sent Events) for the chat interface to reduce perceived latency.
+[ ] Implement sentiment analysis to transfer angry customers to human support.
